@@ -10,8 +10,8 @@ This OS is based on the excellent blog of [phil-opp](https://os.phil-opp.com/).
 
 The entire build process is configured through the `target.json` and `.cargo/config.toml` files.
 
-`target.json`: configures the build target
-`.cargo/config.toml`: configures the build toolchain
+- `target.json`: configures the build target
+- `.cargo/config.toml`: configures the build toolchain
 
 ## How to run
 ```bash
