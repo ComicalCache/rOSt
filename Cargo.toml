@@ -1,0 +1,15 @@
+[package]
+name = "os"
+version = "0.1.0"
+edition = "2021"
+
+# replaced by target.json
+# [profile.dev]
+# panic = "abort"
+
+# replaced by target.json
+# [profile.release]
+# panic = "abort"
+
+[dependencies]
+bootloader = "0.9.22" # using version 0.10.x^ will break the build using `bootimage`

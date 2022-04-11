@@ -1,0 +1,9 @@
+[build]
+target = "target.json" # automatic `--target target.json` flat
+
+[unstable]
+build-std-features = ["compiler-builtins-mem"] # rebuilds the builtin memory functions without c bindings
+build-std = ["core", "compiler_builtins"] # rebuilds standard library functions without c bindings
+
+[target.'cfg(target_os = "none")']
+runner = "bootimage runner" # `cargo run`
