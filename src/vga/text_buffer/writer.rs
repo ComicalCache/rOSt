@@ -1,16 +1,23 @@
-use core::ops::{Deref, DerefMut};
-
 use core::fmt;
+
 use lazy_static::lazy_static;
 use spin::Mutex;
-use volatile::Volatile;
 
-use crate::offsets;
+use crate::{
+    offsets,
+    vga::text_buffer::{
+        color::Color,
+        color_code::ColorCode,
+        text_buffer_struct::{VgaTextBuffer, TEXT_BUFFER_HEIGHT, TEXT_BUFFER_WIDTH},
+    },
+};
+
+use super::screen_char::ScreenChar;
 
 #[macro_export]
 /// Prints a string to the VGA buffer
 macro_rules! print {
-    ($($arg:tt)*) => ($crate::vga_buffer::__print(format_args!($($arg)*)));
+    ($($arg:tt)*) => ($crate::vga::text_buffer::writer::__print(format_args!($($arg)*)));
 }
 
 #[macro_export]
@@ -39,68 +46,6 @@ lazy_static! {
         color_code: ColorCode::new(Color::Yellow, Color::Black),
         buffer: unsafe { &mut *(offsets::VGA_BUFFER as *mut VgaTextBuffer) },
     });
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u8)]
-pub enum Color {
-    Black = 0,
-    Blue = 1,
-    Green = 2,
-    Cyan = 3,
-    Red = 4,
-    Magenta = 5,
-    Brown = 6,
-    LightGray = 7,
-    DarkGray = 8,
-    LightBlue = 9,
-    LightGreen = 10,
-    LightCyan = 11,
-    LightRed = 12,
-    Pink = 13,
-    Yellow = 14,
-    White = 15,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(transparent)]
-struct ColorCode(u8);
-
-impl ColorCode {
-    fn new(foreground: Color, background: Color) -> ColorCode {
-        ColorCode((background as u8) << 4 | (foreground as u8))
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(C)]
-struct ScreenChar {
-    ascii_character: u8,
-    color_code: ColorCode,
-}
-
-impl Deref for ScreenChar {
-    type Target = ScreenChar;
-
-    fn deref(&self) -> &Self::Target {
-        self
-    }
-}
-
-impl DerefMut for ScreenChar {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self
-    }
-}
-
-// default text buffer dimensions
-const TEXT_BUFFER_HEIGHT: usize = 25;
-const TEXT_BUFFER_WIDTH: usize = 80;
-
-#[repr(transparent)]
-struct VgaTextBuffer {
-    chars: [[Volatile<ScreenChar>; TEXT_BUFFER_WIDTH]; TEXT_BUFFER_HEIGHT],
 }
 
 pub struct VgaTextBufferWriter {
@@ -186,6 +131,13 @@ impl VgaTextBufferWriter {
         self.__write_byte(byte);
     }
 
+    /// Writes the raw string to the VGA text buffer
+    pub fn write_raw_string<S: AsRef<str>>(&mut self, s: S) {
+        for byte in s.as_ref().bytes() {
+            self.write_raw_byte(byte);
+        }
+    }
+
     /// writes a byte to the VGA text buffer or a new line if the byte is a newline.
     ///
     /// If the newline is at the bottom of the VGA text buffer, the buffer is scrolled up.
@@ -207,19 +159,15 @@ impl VgaTextBufferWriter {
             }
         }
     }
-
-    /// Writes the raw string to the VGA text buffer
-    pub fn write_raw_string<S: AsRef<str>>(&mut self, s: S) {
-        for byte in s.as_ref().bytes() {
-            self.write_raw_byte(byte);
-        }
-    }
 }
 
 #[allow(dead_code)]
 /// VgaTextBufferWriter interface implementations for configuring the VgaTextBufferWriter
 impl VgaTextBufferWriter {
     /// Sets the cursor position to the specified row and column
+    ///
+    /// ### Panics
+    /// If the row or column is out of bounds
     pub fn set_pos(&mut self, row: usize, col: usize) {
         if row >= self.text_buffer_height || col >= self.text_buffer_width {
             // TODO logger
