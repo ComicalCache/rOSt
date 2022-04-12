@@ -4,6 +4,13 @@
 #![test_runner(crate::test_framework::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
+// ########################################################
+// # This library is used as base for testing  and can    #
+// # mostly be ignored while developing the kernel.       #
+// # Added features must be included here to be available #
+// # for testing.                                         #
+// ########################################################
+
 use core::panic::PanicInfo;
 
 use crate::test_framework::qemu_exit::{exit_qemu, QemuExitCode};

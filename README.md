@@ -21,7 +21,9 @@ cargo run
 will build the kernel and start up a qemu instance booting the kernel.
 
 ### Testing
-Testing works using our own testing framework, located in the [src/test_framework](/src/test_framework) directory. When writing tests it's <u>important</u> to use the `serial_print!` and `serial_println!` macros for printing output. This is because the QEMU instance is hidden and running in the background, as well as exiting after all tests have been ran, sending all output via a serial port to the host machine's stdio. <u>Panics</u> while testing will be appropriately redirected to the serial port and <u>do not</u> require special macros.
+Testing works using our own testing framework, located in [lib.rs](/src/lib.rs) and the [src/test_framework](/src/test_framework) directory.
+
+When writing tests it's <u>important</u> to use the `serial_print!` and `serial_println!` macros for printing output. This is because the QEMU instance is hidden and running in the background, as well as exiting after all tests have been ran, sending all output via a serial port to the host machine's stdio. <u>Panics</u> while testing will be appropriately redirected to the serial port and <u>do not</u> require special macros.
 
 All tests should be placed in the [tests](/tests/) directory.
 
@@ -58,14 +60,14 @@ fn my_test_case() {
 }
 ```
 
-Then go to [.cargo/config.toml](/.cargo/config.toml) and <u>append</u> the t alias with the new file you added:
+Then go to [.cargo/config.toml](/.cargo/config.toml) and <u>append</u> the `t` alias with the new file you added:
 ```toml
 # ...
 [alias]
 t = ["...", "--test", "my_tests"]
 ```
 
-To run tests simply run `cargo t`.
+To run all tests simply run `cargo t`.
 
 
 ### Troubleshooting

@@ -18,7 +18,8 @@ mod vga;
 #[no_mangle]
 // entry point of the program
 pub extern "C" fn _start() -> ! {
-    // `cargo test` entry point
+    // `cargo test` entry point. 
+    // ! DO NOT REMOVE!
     #[cfg(test)]
     test_main();
 
