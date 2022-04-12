@@ -7,6 +7,6 @@ pub const TEXT_BUFFER_HEIGHT: usize = 25;
 pub const TEXT_BUFFER_WIDTH: usize = 80;
 
 #[repr(transparent)]
-pub(crate) struct VgaTextBuffer {
-    pub(crate) chars: [[Volatile<ScreenChar>; TEXT_BUFFER_WIDTH]; TEXT_BUFFER_HEIGHT],
+pub(super) struct VgaTextBuffer {
+    pub(super) chars: [[Volatile<ScreenChar>; TEXT_BUFFER_WIDTH]; TEXT_BUFFER_HEIGHT],
 }
