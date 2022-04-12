@@ -19,6 +19,13 @@ cargo run
 ```
 will build the kernel and start up a qemu instance booting the kernel.
 
+### Testing
+Testing works using our own testing framework, located in the `test_framework` directory. When writing tests it's <u>important</u> to use the `serial_print!` and `serial_println!` macros for printing output. This is because the QEMU instance is hidden and running in the background, as well as exiting after all tests have been ran, sending all output via a serial port to the host machine's stdio. <u>Panics</u> while testing will be appropriately redirected to the serial port and <u>do not</u> require special macros.
+
+All tests should be placed in the `tests` directory.
+
+To run tests simply run `cargo test`.
+
 
 ### Troubleshooting
 - If the build fails because of usage of unstable features, make sure that you enabled the nightly channel using `rustup default nightly` or try `rustup upgrade`
