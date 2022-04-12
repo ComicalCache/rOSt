@@ -1,6 +1,6 @@
 use core::panic::PanicInfo;
 
-use crate::{print, vga::text_buffer::writer::VGA_TEXT_BUFFER_WRITER};
+use crate::{print, vga::text::writer::VGA_TEXT_BUFFER_WRITER};
 
 #[panic_handler]
 // this function is called if a panic occurs

@@ -1,9 +1,9 @@
 #![no_std] // no standard library
 #![no_main] // no entry point
 
-use crate::vga::text_buffer::writer::VGA_TEXT_BUFFER_WRITER;
+use crate::vga::text::writer::VGA_TEXT_BUFFER_WRITER;
 
-use vga::text_buffer::color::Color;
+use vga::text::color::Color;
 
 mod offsets;
 mod panic_handler;

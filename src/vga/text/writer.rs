@@ -5,10 +5,10 @@ use spin::Mutex;
 
 use crate::{
     offsets,
-    vga::text_buffer::{
+    vga::text::{
         color::Color,
         color_code::ColorCode,
-        text_buffer_struct::{VgaTextBuffer, TEXT_BUFFER_HEIGHT, TEXT_BUFFER_WIDTH},
+        text_buffer::{VgaTextBuffer, TEXT_BUFFER_HEIGHT, TEXT_BUFFER_WIDTH},
     },
 };
 
@@ -17,7 +17,7 @@ use super::screen_char::ScreenChar;
 #[macro_export]
 /// Prints a string to the VGA buffer
 macro_rules! print {
-    ($($arg:tt)*) => ($crate::vga::text_buffer::writer::__print(format_args!($($arg)*)));
+    ($($arg:tt)*) => ($crate::vga::text::writer::__print(format_args!($($arg)*)));
 }
 
 #[macro_export]
