@@ -1,27 +1,27 @@
 #![no_std] // no standard library
 #![no_main] // no entry point
 
-mod panic_handler;
+use crate::vga_buffer::VGA_TEXT_BUFFER_WRITER;
+
+use vga_buffer::Color;
+
 mod offsets;
-
-// test hello world function
-fn print_hello_world() {
-    static HELLO_WORLD: &[u8] = b"Hello, world!";
-
-    let vga_buffer = offsets::VGA_BUFFER as *mut u8;
-
-    for (i, &byte) in HELLO_WORLD.iter().enumerate() {
-        unsafe {
-            *vga_buffer.offset(i as isize * 2) = byte;
-            *vga_buffer.offset(i as isize * 2 + 1) = 0xb;
-        }
-    }
-}
+mod panic_handler;
+mod vga_buffer;
 
 #[no_mangle]
 // entry point of the program
 pub extern "C" fn _start() -> ! {
-    print_hello_world();
+    for i in 0..26 {
+        println!("{i}");
+    }
+
+    VGA_TEXT_BUFFER_WRITER.lock().set_color(Color::White, Color::DarkGray);
+    VGA_TEXT_BUFFER_WRITER.lock().set_pos(10, 40);
+    print!("Hello World{}", "!");
+    VGA_TEXT_BUFFER_WRITER.lock().set_color(Color::White, Color::Black);
+    println!();
+    VGA_TEXT_BUFFER_WRITER.lock().set_pos(40, 40); // this will panic
 
     loop {}
 }
