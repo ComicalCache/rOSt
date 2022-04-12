@@ -10,7 +10,7 @@ use crate::vga::text::interface::VGA_TEXT_BUFFER_INTERFACE;
 
 use vga::text::color::Color;
 
-mod offsets;
+mod low_level;
 mod panic_handler;
 mod test_framework;
 mod vga;
@@ -36,8 +36,11 @@ pub extern "C" fn _start() -> ! {
     VGA_TEXT_BUFFER_INTERFACE
         .lock()
         .set_color(Color::White, Color::Black);
+    
+    VGA_TEXT_BUFFER_INTERFACE.lock().set_cursor_mode(true);
+    VGA_TEXT_BUFFER_INTERFACE.lock().set_cursor_position(0, 2);
     println!();
-    VGA_TEXT_BUFFER_INTERFACE.lock().set_pos(40, 40); // this will panic
+    //VGA_TEXT_BUFFER_INTERFACE.lock().set_pos(40, 40); // this will panic
 
     loop {}
 }

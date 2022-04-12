@@ -19,7 +19,7 @@ pub use crate::test_framework::serial; // makes serial_print! and serial_println
 pub use crate::test_framework::ansi_colors; // makes colors available
 pub use crate::vga::text::interface; // makes the VgaTextBufferInterface available
 
-mod offsets;
+mod low_level;
 pub mod test_framework;
 pub mod vga;
 
