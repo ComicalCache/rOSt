@@ -1,8 +1,9 @@
 #![no_std] // no standard library
 #![no_main] // no entry point
 
+// configures our test framework environment
 #![feature(custom_test_frameworks)]
-#![test_runner(crate::tests::test_runner::test_runner)]
+#![test_runner(crate::test_framework::test_runner::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
 use crate::vga::text::writer::VGA_TEXT_BUFFER_WRITER;
@@ -11,23 +12,18 @@ use vga::text::color::Color;
 
 mod offsets;
 mod panic_handler;
+mod test_framework;
 mod tests;
 mod vga;
-
-#[test_case]
-fn trivial_assertion() {
-    print!("trivial assertion... ");
-    assert_eq!(1, 1);
-    println!("[ok]");
-}
 
 #[no_mangle]
 // entry point of the program
 pub extern "C" fn _start() -> ! {
-    // only ran on `cargo test`
+    // conditional compilation, only included on `cargo test`, else discarded.
+    // Avoids compiler warnings about unused code
     #[cfg(test)]
     test_main();
-    
+
     // ! _start() actual entry on `cargo run`
     for i in 0..26 {
         println!("{i}");
