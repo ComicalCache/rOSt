@@ -1,5 +1,7 @@
 use crate::{serial_print, serial_println};
+use crate::test_framework::ansi_colors::Green;
 
+/// Self documenting test runner trait
 pub trait Testable {
     fn run(&self) -> ();
 }
@@ -11,6 +13,6 @@ where
     fn run(&self) {
         serial_print!("{}...\t", core::any::type_name::<T>());
         self();
-        serial_println!("[ok]");
+        serial_println!("{}", Green("[ok]"));
     }
 }

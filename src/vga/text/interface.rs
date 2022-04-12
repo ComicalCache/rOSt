@@ -17,7 +17,7 @@ use super::screen_char::ScreenChar;
 #[macro_export]
 /// Prints a string to the VGA buffer
 macro_rules! print {
-    ($($arg:tt)*) => ($crate::vga::text::writer::__print(format_args!($($arg)*)));
+    ($($arg:tt)*) => ($crate::vga::text::interface::__print(format_args!($($arg)*)));
 }
 
 #[macro_export]
@@ -37,7 +37,7 @@ pub fn __print(args: fmt::Arguments) {
 
 lazy_static! {
     /// Global VGA text buffer writer, locked by a spinmutex
-    pub static ref VGA_TEXT_BUFFER_WRITER: Mutex<VgaTextBufferWriter> = Mutex::new(VgaTextBufferWriter {
+    pub static ref VGA_TEXT_BUFFER_WRITER: Mutex<VgaTextBufferInterface> = Mutex::new(VgaTextBufferInterface {
         text_buffer_height: TEXT_BUFFER_HEIGHT,
         text_buffer_width: TEXT_BUFFER_WIDTH,
 
@@ -48,7 +48,7 @@ lazy_static! {
     });
 }
 
-pub struct VgaTextBufferWriter {
+pub struct VgaTextBufferInterface {
     text_buffer_height: usize,
     text_buffer_width: usize,
 
@@ -59,7 +59,7 @@ pub struct VgaTextBufferWriter {
 }
 
 /// Internal VgaTextBufferWriter implementations
-impl VgaTextBufferWriter {
+impl VgaTextBufferInterface {
     /// Internal implementation of writing to the VGA text buffer, scrolling if necessary
     fn __write_byte(&mut self, byte: u8) {
         if self.column_position >= self.text_buffer_width {
@@ -70,6 +70,9 @@ impl VgaTextBufferWriter {
         let col = self.column_position;
 
         let color_code = self.color_code;
+        
+        // this will never be out of bounds because the VgaTextBufferInterface only holds
+        // values that are within the bounds of the VgaTextBuffer
         self.buffer.chars[row][col].write(ScreenChar {
             ascii_character: byte,
             color_code,
@@ -125,7 +128,7 @@ impl VgaTextBufferWriter {
 
 #[allow(dead_code)]
 /// VgaTextBufferWriter interface implementations for writing to the VGA text buffer
-impl VgaTextBufferWriter {
+impl VgaTextBufferInterface {
     /// writes raw bytes to the VGA text buffer
     pub fn write_raw_byte(&mut self, byte: u8) {
         self.__write_byte(byte);
@@ -163,7 +166,7 @@ impl VgaTextBufferWriter {
 
 #[allow(dead_code)]
 /// VgaTextBufferWriter interface implementations for configuring the VgaTextBufferWriter
-impl VgaTextBufferWriter {
+impl VgaTextBufferInterface {
     /// Sets the cursor position to the specified row and column
     ///
     /// ### Panics
@@ -184,7 +187,7 @@ impl VgaTextBufferWriter {
     }
 }
 
-impl fmt::Write for VgaTextBufferWriter {
+impl fmt::Write for VgaTextBufferInterface {
     /// Write a formatted string to the VGA text buffer.
     ///
     /// This will never fail and can always be unwrapped.

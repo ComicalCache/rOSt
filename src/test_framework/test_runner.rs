@@ -1,16 +1,24 @@
-#[cfg(test)]
+use crate::{
+    serial_println,
+    test_framework::qemu_exit::{exit_qemu, QemuExitCode},
+};
+
 use super::testable::Testable;
+use crate::test_framework::ansi_colors::Yellow;
 
-#[cfg(test)]
+#[allow(dead_code)]
 pub fn test_runner(tests: &[&dyn Testable]) {
-    use crate::{
-        serial_println,
-        test_framework::qemu_exit::{exit_qemu, QemuExitCode},
-    };
-
-    serial_println!("Running {} tests", tests.len());
-    for test in tests {
-        test.run();
+    let test_count = tests.len();
+    if test_count > 0 {
+        serial_println!(
+            "{} {} {}",
+            Yellow("Running"),
+            test_count,
+            Yellow("test(s):")
+        );
+        for test in tests {
+            test.run();
+        }
     }
 
     exit_qemu(QemuExitCode::Success);

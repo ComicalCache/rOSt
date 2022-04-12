@@ -3,24 +3,22 @@
 
 // configures our test framework environment
 #![feature(custom_test_frameworks)]
-#![test_runner(crate::test_framework::test_runner::test_runner)]
+#![test_runner(os_testing::test_framework::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
-use crate::vga::text::writer::VGA_TEXT_BUFFER_WRITER;
+use crate::vga::text::interface::VGA_TEXT_BUFFER_WRITER;
 
 use vga::text::color::Color;
 
 mod offsets;
 mod panic_handler;
 mod test_framework;
-mod tests;
 mod vga;
 
 #[no_mangle]
 // entry point of the program
 pub extern "C" fn _start() -> ! {
-    // conditional compilation, only included on `cargo test`, else discarded.
-    // Avoids compiler warnings about unused code
+    // `cargo test` entry point
     #[cfg(test)]
     test_main();
 

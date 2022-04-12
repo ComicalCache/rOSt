@@ -3,12 +3,15 @@ name = "os"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "os_testing"
+
 # this configures QEMU for testing!
 # causes QEMU to exit after testing instead of continuing execution of _start() and redirecting
 # test output to the hosts stdio via a serial interface. The window is not shown.
 [package.metadata.bootimage]
 test-args = ["-device", "isa-debug-exit,iobase=0xf4,iosize=0x04", "-serial", "stdio", "-display", "none"]
-# (0x10 << 1) | 1 where 0x10 is QemuExitCode::success adjusted for the QEMU exit code shifting
+# 33 = (0x10 << 1) | 1 where 0x10 is QemuExitCode::success adjusted for the QEMU exit code shifting
 # this is done because cargo test assumes 0 is success, any other value is failure
 test-success-exit-code = 33
 test-timeout = 300 # seconds
@@ -17,8 +20,8 @@ test-timeout = 300 # seconds
 bootloader = "0.9.22" # using version 0.10.x^ will break the build using `bootimage`
 volatile = "0.4.4" # volatile wrapper to prevent aggressive compiler optimizations
 spin = "0.9.2" # spinlock implementation
-x86_64 = "0.14.9" # TODO add doc
-uart_16550 = "0.2.17" # serial port used for sending debug output to the host
+x86_64 = "0.14.9" # configures the serial port
+uart_16550 = "0.2.17" # serial port interface used for sending debug output to the host
 
 [dependencies.lazy_static]
 version = "1.4.0"

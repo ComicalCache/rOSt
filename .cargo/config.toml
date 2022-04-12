@@ -7,3 +7,7 @@ build-std = ["core", "compiler_builtins"] # rebuilds standard library functions 
 
 [target.'cfg(target_os = "none")']
 runner = "bootimage runner" # `cargo run`
+
+[alias]
+# registers all tests in the `tests` directory
+t = ["test", "--test", "trivial_test"]
