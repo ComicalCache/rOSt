@@ -58,11 +58,11 @@ fn my_test_case() {
 }
 ```
 
-Then go to [.cargo/config.toml](/.cargo/config.toml) and append the t alias with the new file you added:
+Then go to [.cargo/config.toml](/.cargo/config.toml) and <u>append</u> the t alias with the new file you added:
 ```toml
-...
+# ...
 [alias]
-t = [..., "--test", "my_tests"]
+t = ["...", "--test", "my_tests"]
 ```
 
 To run tests simply run `cargo t`.
