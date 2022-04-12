@@ -1,5 +1,8 @@
 #[cfg(test)]
-pub fn test_runner(tests: &[&dyn Fn()]) {
+use super::testable::Testable;
+
+#[cfg(test)]
+pub fn test_runner(tests: &[&dyn Testable]) {
     use crate::{
         serial_println,
         test_framework::qemu_exit::{exit_qemu, QemuExitCode},
@@ -7,7 +10,7 @@ pub fn test_runner(tests: &[&dyn Fn()]) {
 
     serial_println!("Running {} tests", tests.len());
     for test in tests {
-        test();
+        test.run();
     }
 
     exit_qemu(QemuExitCode::Success);
