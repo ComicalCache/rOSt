@@ -32,12 +32,12 @@ pub fn __print(args: fmt::Arguments) {
     use core::fmt::Write;
 
     // unwrap should be safe because Writer::write_str is safe
-    VGA_TEXT_BUFFER_WRITER.lock().write_fmt(args).unwrap();
+    VGA_TEXT_BUFFER_INTERFACE.lock().write_fmt(args).unwrap();
 }
 
 lazy_static! {
-    /// Global VGA text buffer writer, locked by a spinmutex
-    pub static ref VGA_TEXT_BUFFER_WRITER: Mutex<VgaTextBufferInterface> = Mutex::new(VgaTextBufferInterface {
+    /// Global VGA text buffer interface, locked by a spinmutex
+    pub static ref VGA_TEXT_BUFFER_INTERFACE: Mutex<VgaTextBufferInterface> = Mutex::new(VgaTextBufferInterface {
         text_buffer_height: TEXT_BUFFER_HEIGHT,
         text_buffer_width: TEXT_BUFFER_WIDTH,
 
@@ -58,7 +58,7 @@ pub struct VgaTextBufferInterface {
     buffer: &'static mut VgaTextBuffer,
 }
 
-/// Internal VgaTextBufferWriter implementations
+/// Internal VgaTextBufferInterface implementations
 impl VgaTextBufferInterface {
     /// Internal implementation of writing to the VGA text buffer, scrolling if necessary
     fn __write_byte(&mut self, byte: u8) {
@@ -127,7 +127,7 @@ impl VgaTextBufferInterface {
 }
 
 #[allow(dead_code)]
-/// VgaTextBufferWriter interface implementations for writing to the VGA text buffer
+/// VgaTextBufferInterface interface implementations for writing to the VGA text buffer
 impl VgaTextBufferInterface {
     /// writes raw bytes to the VGA text buffer
     pub fn write_raw_byte(&mut self, byte: u8) {
@@ -165,7 +165,7 @@ impl VgaTextBufferInterface {
 }
 
 #[allow(dead_code)]
-/// VgaTextBufferWriter interface implementations for configuring the VgaTextBufferWriter
+/// VgaTextBufferInterface interface implementations for configuration
 impl VgaTextBufferInterface {
     /// Sets the cursor position to the specified row and column
     ///
@@ -181,7 +181,7 @@ impl VgaTextBufferInterface {
         self.column_position = col;
     }
 
-    /// Sets the color code for the VgaTextBufferWriter
+    /// Sets the color code for the VgaTextBufferInterface
     pub fn set_color(&mut self, foreground: Color, background: Color) {
         self.color_code = ColorCode::new(foreground, background);
     }

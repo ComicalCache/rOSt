@@ -21,7 +21,7 @@ pub use crate::vga::text::interface; // makes the VgaTextBufferInterface availab
 
 mod offsets;
 pub mod test_framework;
-mod vga;
+pub mod vga;
 
 
 pub fn test_panic_handler(info: &PanicInfo) -> ! {

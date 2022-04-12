@@ -5,6 +5,7 @@ This OS is based on the excellent blog of [phil-opp](https://os.phil-opp.com/).
 - [Rust](https://www.rust-lang.org/) using the nightly channel
 - [QEMU](https://www.qemu.org/)
 - [bootimage](https://crates.io/crates/bootimage) (installed via `cargo install bootimage`)
+- [llvm-tools-preview](https://docs.rs/llvm-tools/latest/llvm_tools/) (installed via `rustup component add llvm-tools-preview`)
 
 ### Configuration
 
