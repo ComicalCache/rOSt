@@ -7,9 +7,9 @@
 use core::panic::PanicInfo;
 
 use os_testing::{
-    ansi_colors::{Green, Yellow, Red},
+    ansi_colors::{Green, Red, Yellow},
     serial_println,
-    test_framework::qemu_exit::{exit_qemu, QemuExitCode}, interface::VGA_TEXT_BUFFER_INTERFACE,
+    test_framework::qemu_exit::{exit_qemu, QemuExitCode},
 };
 
 #[panic_handler]
@@ -50,6 +50,6 @@ pub extern "C" fn _start() -> ! {
 // ! insert your tests bellow
 
 #[test_case]
-fn out_of_bounds() {
-    VGA_TEXT_BUFFER_INTERFACE.lock().set_pos(1000, 1000);
+fn out_of_bounds_write() {
+    // TODO
 }

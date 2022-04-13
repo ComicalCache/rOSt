@@ -12,5 +12,4 @@ runner = "bootimage runner" # `cargo run`
 # registers all tests in the `tests` directory
 t = ["test", 
     "--test", "boot_ok",
-    "--test", "invalid_vga_text_area"
 ]

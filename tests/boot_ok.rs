@@ -6,7 +6,7 @@
 
 use core::panic::PanicInfo;
 
-use os_testing::println;
+use os_testing::{println, interface::VGA_TEXT_BUFFER_INTERFACE};
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
@@ -29,4 +29,11 @@ pub fn bulk_print_test() {
     for _ in 0..250 {
         println!("Hello, World!");
     }
+}
+
+#[test_case]
+pub fn read_byte() {
+    println!("Hello, World!");
+    assert_eq!(b'H', VGA_TEXT_BUFFER_INTERFACE.lock().read_byte(0, 0));
+    assert_eq!(b',', VGA_TEXT_BUFFER_INTERFACE.lock().read_byte(0, 5));
 }

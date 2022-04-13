@@ -162,6 +162,16 @@ impl VgaTextBufferInterface {
             }
         }
     }
+
+    /// Reades a byte from the VGA text buffer
+    pub fn read_byte(&self, row: usize, col: usize) -> u8 {
+        if row >= self.text_buffer_height || col >= self.text_buffer_width {
+            // TODO logger
+            panic!("VgaTextBufferInterface::read_byte: row or col out of bounds");
+        }
+
+        self.buffer.chars[row][col].read().ascii_character
+    }
 }
 
 #[allow(dead_code)]

@@ -23,7 +23,10 @@ pub extern "C" fn _start() -> ! {
     #[cfg(test)]
     test_main();
 
-    // ! _start() actual entry on `cargo run`
+    // ########################################
+    // # _start() actual entry on `cargo run` #
+    // ########################################
+    
     for i in 0..26 {
         println!("{i}");
     }
