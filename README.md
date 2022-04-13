@@ -56,6 +56,7 @@ fn panic(info: &PanicInfo) -> ! {
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
+    os_core::init();
     test_main();
     loop {}
 }

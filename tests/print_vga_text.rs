@@ -15,6 +15,7 @@ fn panic(info: &PanicInfo) -> ! {
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
+    os_core::init();
     test_main();
     loop {}
 }
@@ -33,6 +34,7 @@ pub fn bulk_print_test() {
 
 #[test_case]
 pub fn read_byte() {
+    VGA_TEXT_BUFFER_INTERFACE.lock().set_pos(0, 0);
     println!("Hello, World!");
     assert_eq!(b'H', VGA_TEXT_BUFFER_INTERFACE.lock().read_byte(0, 0));
     assert_eq!(b',', VGA_TEXT_BUFFER_INTERFACE.lock().read_byte(0, 5));
