@@ -13,6 +13,8 @@
 
 use core::panic::PanicInfo;
 
+use os_core::{hlt_loop, interface::VGA_TEXT_BUFFER_INTERFACE, print, vga::text::CursorMode};
+
 #[no_mangle]
 // entry point of the program
 pub extern "C" fn _start() -> ! {
@@ -29,12 +31,13 @@ pub extern "C" fn _start() -> ! {
     // # _start() actual entry on `cargo run` #
     // ########################################
 
-    // this causes a panic and the OS will handle it
-    unsafe {
-        *(0xdeadbeef as *mut u64) = 42;
-    };
+    VGA_TEXT_BUFFER_INTERFACE.lock().set_pos(12, 33);
+    VGA_TEXT_BUFFER_INTERFACE
+        .lock()
+        .set_cursor(CursorMode::Block);
+    print!("Hello, World!");
 
-    loop {}
+    hlt_loop();
 }
 
 // ################################################################
@@ -45,6 +48,7 @@ pub extern "C" fn _start() -> ! {
 #[panic_handler]
 // this function is called if a panic occurs and is not a test, all output is redirected to the VGA buffer
 fn panic(info: &PanicInfo) -> ! {
+    #[allow(unused_imports)]
     use os_core::{interface::VGA_TEXT_BUFFER_INTERFACE, print};
 
     // needs to force unlock the VgaTextBufferInterface because it could be locked when the panic occurs
@@ -54,7 +58,7 @@ fn panic(info: &PanicInfo) -> ! {
 
     print!("{}", info);
 
-    loop {}
+    hlt_loop();
 }
 
 #[cfg(test)]

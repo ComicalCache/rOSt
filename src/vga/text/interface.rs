@@ -30,9 +30,13 @@ macro_rules! println {
 #[doc(hidden)]
 pub fn __print(args: fmt::Arguments) {
     use core::fmt::Write;
+    use x86_64::instructions::interrupts;
 
-    // unwrap should be safe because Writer::write_str is safe
-    VGA_TEXT_BUFFER_INTERFACE.lock().write_fmt(args).unwrap();
+    // TODO: find a way to handle this without disabling interrupts since it increases the latency
+    interrupts::without_interrupts(|| {
+        // unwrap should be safe because Writer::write_str is safe
+        VGA_TEXT_BUFFER_INTERFACE.lock().write_fmt(args).unwrap();
+    });
 }
 
 lazy_static! {
