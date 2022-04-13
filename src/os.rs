@@ -13,8 +13,6 @@
 
 use core::panic::PanicInfo;
 
-use os_core::println;
-
 #[no_mangle]
 // entry point of the program
 pub extern "C" fn _start() -> ! {
@@ -30,8 +28,6 @@ pub extern "C" fn _start() -> ! {
     // ########################################
     // # _start() actual entry on `cargo run` #
     // ########################################
-
-    println!("Hello, World!");
 
     // this causes a panic and the OS will handle it
     unsafe {
