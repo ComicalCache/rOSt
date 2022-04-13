@@ -2,11 +2,11 @@
 This OS is based on the excellent blog of [phil-opp](https://os.phil-opp.com/). 
 
 ### Structure
-The os core is a library called [os_core](/src/lib.rs) which has all the important functions and logic of the OS.
+The os core is a library called [os_core](/src/os_core.rs) which has all the important functions and logic of the OS.
 
 This library is used for testing the components in integration tests.
 
-The runnable OS is built as binary called [os](/src/main.rs).
+The runnable OS is built as binary called [os](/src/os.rs).
 
 ### Requirements
 - [Rust](https://www.rust-lang.org/) using the nightly channel

@@ -5,6 +5,11 @@ edition = "2021"
 
 [lib]
 name = "os_core"
+path = "src/os_core.rs"
+
+[[bin]]
+name = "os"
+path = "src/os.rs"
 
 # this configures QEMU for testing!
 # causes QEMU to exit after testing instead of continuing execution of _start() and redirecting
