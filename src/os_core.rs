@@ -8,20 +8,22 @@
 // #   This library is the core of the operating system   #
 // ########################################################
 
-use crate::test_framework::qemu_exit::QemuExitCode;
+pub use crate::interrupts::gtd;
+pub use crate::test_framework::ansi_colors;
 use crate::test_framework::qemu_exit::exit_qemu;
-pub use crate::test_framework::serial; // makes serial_print! and serial_println! available
-pub use crate::test_framework::ansi_colors; // makes colors available
-pub use crate::vga::text::interface; // makes the VgaTextBufferInterface available
+use crate::test_framework::qemu_exit::QemuExitCode;
+pub use crate::test_framework::serial;
+pub use crate::vga::text::interface;
 
 use core::panic::PanicInfo;
 
+pub mod interrupts;
 pub mod low_level;
 pub mod test_framework;
 pub mod vga;
-pub mod interrupts;
 
 pub fn init() {
+    interrupts::init_gdt();
     interrupts::init_idt();
 }
 

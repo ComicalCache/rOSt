@@ -11,6 +11,16 @@ path = "src/os_core.rs"
 name = "os"
 path = "src/os.rs"
 
+###################################
+# Register all failing tests here #
+###################################
+[[test]]
+name = "illegal_cursor_position"
+harness = false
+[[test]]
+name = "stack_overflow"
+harness = false
+
 # this configures QEMU for testing!
 # causes QEMU to exit after testing instead of continuing execution of _start() and redirecting
 # test output to the hosts stdio via a serial interface. The window is not shown.

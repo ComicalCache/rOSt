@@ -29,54 +29,7 @@ cargo run
 will build the kernel and start up a qemu instance booting the kernel.
 
 ### Testing
-Testing works using our own testing framework, located in [lib.rs](/src/lib.rs) and the [src/test_framework](/src/test_framework) directory.
-
-When writing tests it's <u>important</u> to use the `serial_print!` and `serial_println!` macros for printing output. This is because the QEMU instance is hidden and running in the background, as well as exiting after all tests have been ran, sending all output via a serial port to the host machine's stdio. <u>Panics</u> while testing will be appropriately redirected to the serial port and <u>do not</u> require special macros.
-
-All tests should be placed in the [tests](/tests/) directory.
-
-#### Setup tests
-
-All test files require some boilerplate to work correctly. First create a file according to this template:
-
-`tests/my_tests.rs`
-```rust
-#![no_std]
-#![no_main]
-#![feature(custom_test_frameworks)]
-#![test_runner(os_core::test_framework::test_runner)]
-#![reexport_test_harness_main = "test_main"]
-
-use core::panic::PanicInfo;
-
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    os_core::test_panic_handler(info)
-}
-
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
-    os_core::init();
-    test_main();
-    loop {}
-}
-
-// ! insert your tests bellow
-
-#[test_case]
-fn my_test_case() {
-    // ...
-}
-```
-
-Then go to [.cargo/config.toml](/.cargo/config.toml) and <u>append</u> the `t` alias with the new file you added:
-```toml
-# ...
-[alias]
-t = ["...", "--test", "my_tests"]
-```
-
-To run all tests simply run `cargo t`.
+Look at [integration testing](/tests/) for more information.
 
 
 ### Troubleshooting

@@ -31,9 +31,12 @@ pub extern "C" fn _start() -> ! {
     // # _start() actual entry on `cargo run` #
     // ########################################
 
-    x86_64::instructions::interrupts::int3(); // testing interrupt handler
-
     println!("Hello, World!");
+
+    // this causes a panic and the OS will handle it
+    unsafe {
+        *(0xdeadbeef as *mut u64) = 42;
+    };
 
     loop {}
 }

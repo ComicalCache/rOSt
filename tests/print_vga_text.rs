@@ -6,7 +6,7 @@
 
 use core::panic::PanicInfo;
 
-use os_core::{println, interface::VGA_TEXT_BUFFER_INTERFACE};
+use os_core::{interface::VGA_TEXT_BUFFER_INTERFACE, println};
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
