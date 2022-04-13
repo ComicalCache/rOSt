@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use spin::Mutex;
 
 use crate::{
-    offsets,
+    low_level::{offsets, commands},
     vga::text::{
         color::Color,
         color_code::ColorCode,
@@ -194,6 +194,35 @@ impl VgaTextBufferInterface {
     /// Sets the color code for the VgaTextBufferInterface
     pub fn set_color(&mut self, foreground: Color, background: Color) {
         self.color_code = ColorCode::new(foreground, background);
+    }
+
+    pub fn set_cursor(&mut self, enabled: bool) {
+        commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0A); // Choose the Cursor Start Register
+        let csr = commands::asm_inb(offsets::VGA_REG_DATA_RW); // Read the cursor enable and the scanline start
+        let new_csr = if enabled { csr & !0x20 } else { csr | 0x20 }; // Only modify the enable bit
+        commands::asm_outb(offsets::VGA_REG_DATA_RW, new_csr); // Write the new value to the register
+    }
+
+    pub fn set_cursor_mode(&mut self, block: bool) {
+        if !block {
+            commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0A);
+            commands::asm_outb(offsets::VGA_REG_DATA_RW, 13);
+            commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0B);
+            commands::asm_outb(offsets::VGA_REG_DATA_RW, 14);
+        } else {
+            commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0A);
+            commands::asm_outb(offsets::VGA_REG_DATA_RW, 0);
+            commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0B);
+            commands::asm_outb(offsets::VGA_REG_DATA_RW, 15);
+        }
+    }
+
+    pub fn set_cursor_position(&mut self, x: usize, y: usize) {
+        let total = (y * self.text_buffer_width + x) as u16;
+        commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0F);
+        commands::asm_outb(offsets::VGA_REG_DATA_RW, total as u8);
+        commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0E);
+        commands::asm_outb(offsets::VGA_REG_DATA_RW, (total>>8) as u8);
     }
 }
 
