@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use spin::Mutex;
 
 use crate::{
-    low_level::{offsets, commands},
+    low_level::{commands, offsets},
     vga::text::{
         color::Color,
         color_code::ColorCode,
@@ -12,7 +12,7 @@ use crate::{
     },
 };
 
-use super::screen_char::ScreenChar;
+use super::{screen_char::ScreenChar, CursorMode};
 
 #[macro_export]
 /// Prints a string to the VGA buffer
@@ -70,7 +70,7 @@ impl VgaTextBufferInterface {
         let col = self.column_position;
 
         let color_code = self.color_code;
-        
+
         // this will never be out of bounds because the VgaTextBufferInterface only holds
         // values that are within the bounds of the VgaTextBuffer
         self.buffer.chars[row][col].write(ScreenChar {
@@ -116,6 +116,14 @@ impl VgaTextBufferInterface {
         }
     }
 
+    /// Shows or hides the cursor
+    fn __show_cursor(&self, enabled: bool) {
+        commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0A); // Choose the Cursor Start Register
+        let csr = commands::asm_inb(offsets::VGA_REG_DATA_RW); // Read the cursor enable and the scanline start
+        let new_csr = if enabled { csr & !0x20 } else { csr | 0x20 }; // Only modify the enable bit
+        commands::asm_outb(offsets::VGA_REG_DATA_RW, new_csr); // Write the new value to the register
+    }
+
     /// Sets the cursor position to the bottom of the VGA text buffer for outputting panic messages and the colour
     /// code for the panic messages
     pub fn __set_panic_config(&mut self) {
@@ -127,11 +135,13 @@ impl VgaTextBufferInterface {
 }
 
 #[allow(dead_code)]
-/// VgaTextBufferInterface interface implementations for writing to the VGA text buffer
+/// VgaTextBufferInterface implementations for writing to the VGA text buffer
 impl VgaTextBufferInterface {
     /// writes raw bytes to the VGA text buffer
     pub fn write_raw_byte(&mut self, byte: u8) {
         self.__write_byte(byte);
+
+        self.set_cursor_position(self.column_position, self.row_position);
     }
 
     /// Writes the raw string to the VGA text buffer
@@ -139,6 +149,8 @@ impl VgaTextBufferInterface {
         for byte in s.as_ref().bytes() {
             self.write_raw_byte(byte);
         }
+
+        self.set_cursor_position(self.column_position, self.row_position);
     }
 
     /// writes a byte to the VGA text buffer or a new line if the byte is a newline.
@@ -149,6 +161,8 @@ impl VgaTextBufferInterface {
             b'\n' => self.__new_line(),
             byte => self.__write_byte(byte),
         }
+
+        self.set_cursor_position(self.column_position, self.row_position);
     }
 
     /// Writes a string to the VGA text buffer
@@ -161,6 +175,8 @@ impl VgaTextBufferInterface {
                 _ => self.write_byte(0xfe),
             }
         }
+
+        self.set_cursor_position(self.column_position, self.row_position);
     }
 
     /// Reades a byte from the VGA text buffer
@@ -175,7 +191,7 @@ impl VgaTextBufferInterface {
 }
 
 #[allow(dead_code)]
-/// VgaTextBufferInterface interface implementations for configuration
+/// VgaTextBufferInterface implementations for configuration
 impl VgaTextBufferInterface {
     /// Sets the cursor position to the specified row and column
     ///
@@ -189,6 +205,8 @@ impl VgaTextBufferInterface {
 
         self.row_position = row;
         self.column_position = col;
+
+        self.set_cursor_position(self.column_position, self.row_position);
     }
 
     /// Sets the color code for the VgaTextBufferInterface
@@ -196,33 +214,37 @@ impl VgaTextBufferInterface {
         self.color_code = ColorCode::new(foreground, background);
     }
 
-    pub fn set_cursor(&mut self, enabled: bool) {
-        commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0A); // Choose the Cursor Start Register
-        let csr = commands::asm_inb(offsets::VGA_REG_DATA_RW); // Read the cursor enable and the scanline start
-        let new_csr = if enabled { csr & !0x20 } else { csr | 0x20 }; // Only modify the enable bit
-        commands::asm_outb(offsets::VGA_REG_DATA_RW, new_csr); // Write the new value to the register
-    }
+    /// Sets the cursor style to the specified value
+    pub fn set_cursor(&mut self, cursor_mode: CursorMode) {
+        match cursor_mode {
+            CursorMode::Show => self.__show_cursor(true),
+            CursorMode::Hide => self.__show_cursor(false),
+            CursorMode::Default => {
+                self.__show_cursor(true);
 
-    pub fn set_cursor_mode(&mut self, block: bool) {
-        if !block {
-            commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0A);
-            commands::asm_outb(offsets::VGA_REG_DATA_RW, 13);
-            commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0B);
-            commands::asm_outb(offsets::VGA_REG_DATA_RW, 14);
-        } else {
-            commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0A);
-            commands::asm_outb(offsets::VGA_REG_DATA_RW, 0);
-            commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0B);
-            commands::asm_outb(offsets::VGA_REG_DATA_RW, 15);
+                commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0A);
+                commands::asm_outb(offsets::VGA_REG_DATA_RW, 13);
+                commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0B);
+                commands::asm_outb(offsets::VGA_REG_DATA_RW, 14);
+            }
+            CursorMode::Block => {
+                self.__show_cursor(true);
+
+                commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0A);
+                commands::asm_outb(offsets::VGA_REG_DATA_RW, 0);
+                commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0B);
+                commands::asm_outb(offsets::VGA_REG_DATA_RW, 15);
+            }
         }
     }
 
-    pub fn set_cursor_position(&mut self, x: usize, y: usize) {
+    /// Sets the cursor position
+    pub fn set_cursor_position(&self, x: usize, y: usize) {
         let total = (y * self.text_buffer_width + x) as u16;
         commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0F);
         commands::asm_outb(offsets::VGA_REG_DATA_RW, total as u8);
         commands::asm_outb(offsets::VGA_REG_ADDRESS_RW, 0x0E);
-        commands::asm_outb(offsets::VGA_REG_DATA_RW, (total>>8) as u8);
+        commands::asm_outb(offsets::VGA_REG_DATA_RW, (total >> 8) as u8);
     }
 }
 
