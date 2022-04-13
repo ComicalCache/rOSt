@@ -217,7 +217,6 @@ impl VgaTextBufferInterface {
     /// Sets the cursor style to the specified value
     pub fn set_cursor(&mut self, cursor_mode: CursorMode) {
         match cursor_mode {
-            CursorMode::Show => self.__show_cursor(true),
             CursorMode::Hide => self.__show_cursor(false),
             CursorMode::Default => {
                 self.__show_cursor(true);
