@@ -1,6 +1,13 @@
 # x86-64 OS written in Rust 
 This OS is based on the excellent blog of [phil-opp](https://os.phil-opp.com/). 
 
+### Structure
+The os core is a library called [os_core](/src/lib.rs) which has all the important functions and logic of the OS.
+
+This library is used for testing the components in integration tests.
+
+The runnable OS is built as binary called [os](/src/main.rs).
+
 ### Requirements
 - [Rust](https://www.rust-lang.org/) using the nightly channel
 - [QEMU](https://www.qemu.org/)
@@ -37,14 +44,14 @@ All test files require some boilerplate to work correctly. First create a file a
 #![no_std]
 #![no_main]
 #![feature(custom_test_frameworks)]
-#![test_runner(os_testing::test_framework::test_runner)]
+#![test_runner(os_core::test_framework::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
 use core::panic::PanicInfo;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    os_testing::test_panic_handler(info)
+    os_core::test_panic_handler(info)
 }
 
 #[no_mangle]

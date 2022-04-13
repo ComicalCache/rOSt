@@ -1,12 +1,12 @@
 #![no_std]
 #![no_main]
 #![feature(custom_test_frameworks)]
-#![test_runner(os_testing::test_framework::test_runner)]
+#![test_runner(os_core::test_framework::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
 use core::panic::PanicInfo;
 
-use os_testing::{
+use os_core::{
     ansi_colors::{Green, Red, Yellow},
     serial_println,
     test_framework::qemu_exit::{exit_qemu, QemuExitCode},
@@ -50,6 +50,6 @@ pub extern "C" fn _start() -> ! {
 // ! insert your tests bellow
 
 #[test_case]
-fn out_of_bounds_write() {
+fn empty() {
     // TODO
 }
