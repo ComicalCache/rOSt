@@ -44,8 +44,5 @@ features = ["spin_no_std"]
 # Register all failing tests here #
 ###################################
 [[test]]
-name = "illegal_cursor_position"
-harness = false
-[[test]]
 name = "stack_overflow"
 harness = false

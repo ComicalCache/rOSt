@@ -1,33 +1,36 @@
 #![no_std] // no standard library
 #![no_main]
+#![feature(custom_test_frameworks, abi_x86_interrupt)]
+#![test_runner(os_core::test_framework::test_runner)]
+#![reexport_test_harness_main = "test_main"]
 // no entry point
 
 // #################################################
 // #   This produces a runnable binary of the OS   #
 // #################################################
 
-// configures our test framework environment
-#![feature(custom_test_frameworks, abi_x86_interrupt)]
-#![test_runner(os_core::test_framework::test_runner)]
-#![reexport_test_harness_main = "test_main"]
-
 use os_core::vga::vga_core::{TextDrawable, PlainDrawable};
-use bootloader::{entry_point, BootInfo, boot_info::FrameBuffer};
+use bootloader::{BootInfo, boot_info::FrameBuffer, entry_point};
 use os_core::vga::{vga_buffer::VGADeviceFactory, vga_core::Clearable, vga_color};
 use core::panic::PanicInfo;
 
 use os_core::hlt_loop;
 
-entry_point!(kernel_start);
-#[no_mangle]
-pub fn kernel_start(_boot_info: &'static mut BootInfo) -> ! {
-    let framebuffer_pointer: *mut FrameBuffer = _boot_info.framebuffer.as_mut().unwrap();
+entry_point!(kernel);
+pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
+    #[cfg(test)]
+    kernel_test(boot_info);
+    #[cfg(not(test))]
+    kernel_main(boot_info);
+    hlt_loop();
+}
+
+pub fn kernel_main(boot_info: &'static mut BootInfo) {
+    
+    let framebuffer_pointer: *mut FrameBuffer = boot_info.framebuffer.as_mut().unwrap();
 
     let os_framebuffer = unsafe { framebuffer_pointer.as_mut().unwrap() };
     os_core::init(os_framebuffer);
-
-    #[cfg(test)]
-    test_main();
 
     let usable_framebuffer = unsafe { framebuffer_pointer.as_mut().unwrap() };
 
@@ -43,33 +46,25 @@ pub fn kernel_start(_boot_info: &'static mut BootInfo) -> ! {
     unsafe {
         *(0xdeadbeef as *mut u64) = 42;
     };
-    
-
-    hlt_loop();
 }
-
-// ################################################################
-// #   Defines panic handlers for testing and regular execution   #
-// ################################################################
 
 #[cfg(not(test))]
 #[panic_handler]
-// this function is called if a panic occurs and is not a test, all output is redirected to the VGA buffer
+// this function is called if a panic occurs and it is a test, all output is redirected to the serial port
 fn panic(info: &PanicInfo) -> ! {
-    use os_core::print;
-
-    // this should be safe because the panic handler is the last thing that is executed
-
-    print!("{}", info);
-
+    os_core::print!("{}", info);
     hlt_loop();
+}
+
+#[cfg(test)]
+pub fn kernel_test(boot_info: &'static mut BootInfo) {
+    os_core::init(boot_info.framebuffer.as_mut().unwrap());
+    test_main();
 }
 
 #[cfg(test)]
 #[panic_handler]
 // this function is called if a panic occurs and it is a test, all output is redirected to the serial port
 fn panic(info: &PanicInfo) -> ! {
-    use os_core::test_panic_handler;
-
-    test_panic_handler(info)
+    os_core::test_panic_handler(info);
 }

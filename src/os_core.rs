@@ -1,14 +1,12 @@
 #![no_std]
-#![cfg_attr(test, no_main)]
-#![feature(custom_test_frameworks, abi_x86_interrupt)]
-#![test_runner(crate::test_framework::test_runner)]
-#![reexport_test_harness_main = "test_main"]
+#![feature(abi_x86_interrupt)]
 
 // ########################################################
 // #   This library is the core of the operating system   #
 // ########################################################
 
 use bootloader::boot_info::FrameBuffer;
+
 
 pub use crate::interrupts::gtd;
 pub use crate::test_framework::ansi_colors;
@@ -38,17 +36,6 @@ pub fn hlt_loop() -> ! {
     loop {
         x86_64::instructions::hlt();
     }
-}
-
-// ###########################################################
-// #   Only defines a panic handler for the test framework   #
-// ###########################################################
-
-#[cfg(test)]
-#[panic_handler]
-// this function is called if a panic occurs and it is a test, all output is redirected to the serial port
-fn panic(info: &PanicInfo) -> ! {
-    test_panic_handler(info)
 }
 
 pub fn test_panic_handler(info: &PanicInfo) -> ! {

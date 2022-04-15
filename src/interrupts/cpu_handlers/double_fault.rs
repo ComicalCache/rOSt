@@ -6,5 +6,5 @@ pub extern "x86-interrupt" fn double_fault_handler(
 ) -> ! {
     // ! this should never do stack heavy operations because this handles has a separate stack
     // ! that has no stack guard page and thus could corrupt the stack
-    panic!("EXCEPTION: DOUBLE FAULT\n{:#?}", stack_frame);
+    panic!("EXCEPTION: DOUBLE FAULT\n{:#?}\n{:#?}", stack_frame, _error_code);
 }
