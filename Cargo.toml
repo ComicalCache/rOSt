@@ -21,12 +21,18 @@ test-args = ["-device", "isa-debug-exit,iobase=0xf4,iosize=0x04", "-serial", "st
 test-success-exit-code = 33
 test-timeout = 300 # seconds
 
+[workspace]
+members = [
+    "boot",
+]
+
 [dependencies]
-bootloader = "0.9.22" # using version 0.10.x^ will break the build using `bootimage`
+bootloader = "0.10.12"
 volatile = "0.4.4" # volatile wrapper to prevent aggressive compiler optimizations
 spin = "0.9.2" # spinlock implementation
 x86_64 = "0.14.9" # configures the serial port, cpu exception table
 uart_16550 = "0.2.17" # serial port interface used for sending debug output to the host
+noto-sans-mono-bitmap = "0.1.5" # nice bitmap font
 
 [dependencies.lazy_static]
 version = "1.4.0"
