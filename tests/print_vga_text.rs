@@ -34,8 +34,16 @@ pub fn bulk_print_test() {
 
 #[test_case]
 pub fn read_byte() {
-    VGA_TEXT_BUFFER_INTERFACE.lock().set_pos(0, 0);
-    println!("Hello, World!");
-    assert_eq!(b'H', VGA_TEXT_BUFFER_INTERFACE.lock().read_byte(0, 0));
-    assert_eq!(b',', VGA_TEXT_BUFFER_INTERFACE.lock().read_byte(0, 5));
+    use x86_64::instructions::interrupts;
+
+    // adjusted test for race conditions through interrupts
+    interrupts::without_interrupts(|| {
+        VGA_TEXT_BUFFER_INTERFACE.lock().set_pos(0, 0);
+        let test_out = "Does it print correctly?";
+        println!("{}", test_out);
+
+        for (i, c) in test_out.chars().enumerate() {
+            assert_eq!(c as u8, VGA_TEXT_BUFFER_INTERFACE.lock().read_byte(0, i));
+        }
+    });
 }
