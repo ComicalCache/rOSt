@@ -11,7 +11,6 @@ The runnable OS is built as binary called [os](/src/os.rs).
 ### Requirements
 - [Rust](https://www.rust-lang.org/) using the nightly channel
 - [QEMU](https://www.qemu.org/)
-- [bootimage](https://crates.io/crates/bootimage) (installed via `cargo install bootimage`)
 - [llvm-tools-preview](https://docs.rs/llvm-tools/latest/llvm_tools/) (installed via `rustup component add llvm-tools-preview`)
 
 ### Configuration
@@ -24,7 +23,7 @@ The entire build process is configured through the [target.json](/target.json), 
 
 ## How to run
 ```bash
-cargo run
+cargo krun
 ```
 will build the kernel and start up a qemu instance booting the kernel.
 
