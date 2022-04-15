@@ -16,6 +16,8 @@ use bootloader::{entry_point, BootInfo, boot_info::FrameBuffer};
 use os_core::vga::{vga_buffer::VGADeviceFactory, vga_core::Clearable, vga_color};
 use core::panic::PanicInfo;
 
+use os_core::hlt_loop;
+
 entry_point!(kernel_start);
 #[no_mangle]
 pub fn kernel_start(_boot_info: &'static mut BootInfo) -> ! {
@@ -43,7 +45,7 @@ pub fn kernel_start(_boot_info: &'static mut BootInfo) -> ! {
     };
     
 
-    loop {}
+    hlt_loop();
 }
 
 // ################################################################
@@ -60,7 +62,7 @@ fn panic(info: &PanicInfo) -> ! {
 
     print!("{}", info);
 
-    loop {}
+    hlt_loop();
 }
 
 #[cfg(test)]
