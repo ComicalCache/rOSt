@@ -57,7 +57,6 @@ pub fn kernel_main(boot_info: &'static mut BootInfo) {
 
 #[cfg(not(test))]
 #[panic_handler]
-// this function is called if a panic occurs and it is a test, all output is redirected to the serial port
 fn panic(info: &PanicInfo) -> ! {
     os_core::print!("{}", info);
     hlt_loop();
