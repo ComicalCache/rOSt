@@ -22,9 +22,9 @@ pub mod vga;
 pub mod logger;
 
 pub fn init(framebuffer: &'static mut FrameBuffer) {
+    logger::init(framebuffer);
     interrupts::init_gdt();
     interrupts::init_idt();
-    logger::init(framebuffer);
     unsafe {
         // can cause undefined behaviour if the offsets were not set correctly
         interrupts::PICS.lock().initialize();
