@@ -1,4 +1,10 @@
+use noto_sans_mono_bitmap::{BitmapHeight, FontWeight, get_bitmap_width};
+
 use super::vga_color::VGAColor;
+
+pub const CHAR_HEIGHT: BitmapHeight = BitmapHeight::Size14;
+pub const CHAR_WEIGHT: FontWeight = FontWeight::Regular;
+pub const CHAR_WIDTH: usize = get_bitmap_width(CHAR_WEIGHT, CHAR_HEIGHT);
 
 pub trait Clearable {
   fn clear(&mut self, color: &VGAColor);

@@ -14,6 +14,7 @@ pub static CLAY: VGAColor = VGAColor{ red: 128, green: 64, blue: 11, alpha: 255 
 pub static CHARLOTTE: VGAColor = VGAColor { red: 161, green: 232, blue: 223, alpha: 255 };
 
 impl VGAColor {
+  /// Multiplies the color by the given intensity value, returning a new color with parameters scaled back to 0-255.
   pub fn multiply(&self, intensity: u8) -> VGAColor {
     let intu16 = intensity as u16;
     VGAColor {
@@ -23,6 +24,7 @@ impl VGAColor {
       alpha: ((self.alpha as u16 * intu16)/255) as u8
     }
   }
+  /// Multiplies only the alpha value by the opacity value, returning a new color with alpha scaled back to 0-255.
   pub fn multiply_alpha(&self, opacity: u8) -> VGAColor {
     let opu16 = opacity as u16;
     VGAColor {
@@ -32,12 +34,14 @@ impl VGAColor {
       alpha: ((self.alpha as u16 * opu16)/255) as u8
     }
   }
+  /// Returns the byte value for the grayscale version of the color, using the human light perception formula
   pub fn to_grayscale(&self) -> u8 {
     let red = self.red as u32;
     let green = self.green as u32;
     let blue = self.blue as u32;
     ((red * 299 + green * 587 + blue * 114) / 1000) as u8
   }
+  /// Interpolates between two colors, where t=0 -> First color, t=255 -> Second color
   pub fn interpolate(a: &VGAColor, b: &VGAColor, t: u8) -> VGAColor {
     let t1 = (255 - t) as u16;
     let t2 = t as u16;
