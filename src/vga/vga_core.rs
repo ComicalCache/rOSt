@@ -5,7 +5,7 @@ use super::{point_2d::Point2D, vga_color::VGAColor};
 
 pub const CHAR_HEIGHT: BitmapHeight = BitmapHeight::Size14;
 pub const CHAR_WEIGHT: FontWeight = FontWeight::Regular;
-pub const CHAR_WIDTH: usize = get_bitmap_width(CHAR_WEIGHT, CHAR_HEIGHT);
+pub const CHAR_WIDTH: u16 = get_bitmap_width(CHAR_WEIGHT, CHAR_HEIGHT) as u16;
 lazy_static! {
     pub static ref INVALID_CHAR: BitmapChar = get_bitmap(' ', CHAR_WEIGHT, CHAR_HEIGHT).unwrap();
 }

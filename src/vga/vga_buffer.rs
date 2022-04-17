@@ -30,9 +30,9 @@ impl Clearable for VGADevice<'_> {
 
 impl PlainDrawable for VGADevice<'_> {
     fn draw_point(&mut self, x: u16, y: u16, color: VGAColor<u8>) {
-        let _x = x as usize;
-        let _y = y as usize;
-        let index = _y * self.bytes_per_row + _x * self.frame_buffer_info.bytes_per_pixel;
+        let x = x as usize;
+        let y = y as usize;
+        let index = y * self.bytes_per_row + x * self.frame_buffer_info.bytes_per_pixel;
         match self.frame_buffer_info.pixel_format {
             PixelFormat::RGB => {
                 let frame_color = VGAColor {
@@ -76,53 +76,53 @@ impl PlainDrawable for VGADevice<'_> {
     }
 
     fn draw_line(&mut self, x1: u16, y1: u16, x2: u16, y2: u16, color: VGAColor<u8>) {
-        let ix2: isize = x2 as isize;
-        let iy2: isize = y2 as isize;
+        let x2 = x2 as i16;
+        let y2 = y2 as i16;
         // Bresenham's algorithm
 
-        let mut x = x1 as isize;
-        let mut y = y1 as isize;
+        let mut x1 = x1 as i16;
+        let mut y1 = y1 as i16;
 
-        let xi: isize;
-        let dx: isize;
+        let xi: i16;
+        let dx: i16;
         if x1 < x2 {
             xi = 1;
-            dx = (x2 - x1) as isize;
+            dx = x2 - x1;
         } else {
             xi = -1;
-            dx = (x1 - x2) as isize;
+            dx = x1 - x2;
         }
 
-        let yi: isize;
-        let dy: isize;
+        let yi: i16;
+        let dy: i16;
         if y1 < y2 {
             yi = 1;
-            dy = (y2 - y1) as isize;
+            dy = y2 - y1;
         } else {
             yi = -1;
-            dy = (y1 - y2) as isize;
+            dy = y1 - y2;
         }
-        self.draw_point(x as u16, y as u16, color);
+        self.draw_point(x1 as u16, y1 as u16, color);
 
         let ai;
         let bi;
-        let mut d: isize;
+        let mut d: i16;
         // OX axis
         if dx > dy {
             ai = (dy - dx) * 2;
             bi = dy * 2;
             d = bi - dx;
             // Loop over next Xs
-            while x != ix2 {
+            while x1 != x2 {
                 if d >= 0 {
-                    x += xi;
-                    y += yi;
+                    x1 += xi;
+                    y1 += yi;
                     d += ai;
                 } else {
                     d += bi;
-                    x += xi;
+                    x1 += xi;
                 }
-                self.draw_point(x as u16, y as u16, color);
+                self.draw_point(x1 as u16, y1 as u16, color);
             }
         }
         // OY axis
@@ -131,16 +131,16 @@ impl PlainDrawable for VGADevice<'_> {
             bi = dx * 2;
             d = bi - dy;
             // Loop over next Ys
-            while y != iy2 {
+            while y1 != y2 {
                 if d >= 0 {
-                    x += xi;
-                    y += yi;
+                    x1 += xi;
+                    y1 += yi;
                     d += ai;
                 } else {
                     d += bi;
-                    y += yi;
+                    y1 += yi;
                 }
-                self.draw_point(x as u16, y as u16, color);
+                self.draw_point(x1 as u16, y1 as u16, color);
             }
         }
     }
@@ -231,9 +231,7 @@ impl TextDrawable for VGADevice<'_> {
                     pos_y += CHAR_HEIGHT as u16;
                 }
                 _ => {
-                    if pos_x + CHAR_WIDTH as u16
-                        > self.frame_buffer_info.horizontal_resolution as u16
-                    {
+                    if pos_x + CHAR_WIDTH > self.frame_buffer_info.horizontal_resolution as u16 {
                         pos_x = reset_x;
                         pos_y += CHAR_HEIGHT as u16;
                     }
@@ -245,7 +243,7 @@ impl TextDrawable for VGADevice<'_> {
                         &bitmap_char.as_ref().unwrap_or(invalid_char),
                         color,
                     );
-                    pos_x += CHAR_WIDTH as u16;
+                    pos_x += CHAR_WIDTH;
                 }
             }
         }
@@ -262,7 +260,7 @@ impl TextDrawable for VGADevice<'_> {
                     pos_y += CHAR_HEIGHT as u16;
                 }
                 _ => {
-                    pos_x += CHAR_WIDTH as u16;
+                    pos_x += CHAR_WIDTH;
                     if pos_x > self.frame_buffer_info.horizontal_resolution as u16 {
                         pos_x = reset_x;
                         pos_y += CHAR_HEIGHT as u16;
