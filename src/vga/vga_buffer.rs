@@ -157,15 +157,15 @@ impl PlainDrawable for VGADevice<'_> {
         color: VGAColor<u8>,
     ) {
         let mut t_stack: StaticStack<(f32, f32), 32> = StaticStack::new();
-        t_stack.push(&(0f32, 1f32));
+        t_stack.push(&(0f32, 1f32)).unwrap();
         while t_stack.length() > 0 {
             let frame = t_stack.pop().unwrap();
             let a = bezier_point(p1, p2, p3, p4, frame.0);
             let b = bezier_point(p1, p2, p3, p4, frame.1);
             if a.sqr_distance::<i32>(b) > 16 {
                 let mid = (frame.1 + frame.0) * 0.5;
-                t_stack.push(&(frame.0, mid));
-                t_stack.push(&(mid, frame.1));
+                t_stack.push(&(frame.0, mid)).unwrap();
+                t_stack.push(&(mid, frame.1)).unwrap();
             } else {
                 self.draw_line_p(a, b, color);
             }

@@ -11,9 +11,13 @@ impl<T: Sized + Default + Clone + Copy, const C: usize> StaticStack<T, C> {
         }
     }
 
-    pub fn push(&mut self, item: &T) {
+    pub fn push(&mut self, item: &T) -> Result<(), &str> {
+        if self.top == C {
+            return Err("Static stack is full");
+        }
         self.buffer[self.top] = item.clone();
         self.top += 1;
+        Ok(())
     }
 
     pub fn pop(&mut self) -> Option<T> {
