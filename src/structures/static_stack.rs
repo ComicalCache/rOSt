@@ -16,9 +16,12 @@ impl<T: Sized + Default + Clone + Copy, const C: usize> StaticStack<T, C> {
         self.top += 1;
     }
 
-    pub fn pop(&mut self) -> T {
+    pub fn pop(&mut self) -> Option<T> {
+        if self.top == 0 {
+            return None;
+        }
         self.top -= 1;
-        self.buffer[self.top]
+        Some(self.buffer[self.top])
     }
 
     pub fn length(&self) -> usize {

@@ -160,7 +160,7 @@ impl PlainDrawable for VGADevice<'_> {
         let mut t_stack: StaticStack<(f32, f32), 32> = StaticStack::new();
         t_stack.push(&(0f32, 1f32));
         while t_stack.length() > 0 {
-            let frame = t_stack.pop();
+            let frame = t_stack.pop().unwrap();
             let a = bezier_point(p1, p2, p3, p4, frame.0);
             let b = bezier_point(p1, p2, p3, p4, frame.1);
             if a.sqr_distance::<i32>(b) > 16 {
