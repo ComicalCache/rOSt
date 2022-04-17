@@ -24,9 +24,9 @@ use os_core::hlt_loop;
 
 entry_point!(kernel);
 pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
-    //#[cfg(test)]
-    //kernel_test(boot_info);
-    //#[cfg(not(test))]
+    #[cfg(test)]
+    kernel_test(boot_info);
+    #[cfg(not(test))]
     kernel_main(boot_info);
     hlt_loop();
 }
