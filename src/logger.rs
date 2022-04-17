@@ -20,23 +20,23 @@ pub fn init(framebuffer: &'static mut FrameBuffer) {
 }
 
 pub struct Logger {
-  x: usize,
-  y: usize,
-  start_x: usize,
+  x: u16,
+  y: u16,
+  start_x: u16,
   device: VGADevice<'static>,
   took_over: bool
 }
 
 impl Logger {
   fn __log(&mut self, text: &str) {
-    let (x, y) = self.device.draw_string(self.x, self.y, &vga_color::CHARLOTTE, text, self.start_x);
+    let (x, y) = self.device.draw_string(self.x, self.y, vga_color::CHARLOTTE, text, self.start_x);
     self.x = x;
     self.y = y;
   }
 
   pub fn log(&mut self, text: &str) {
     if !self.took_over {
-      self.device.clear(&vga_color::CLAY);
+      self.device.clear(vga_color::CLAY);
       self.__log("OOPS - Something went wrong. Better check what it was using the stackframe:");
       if self.x > 0 {
         self.x = 32;

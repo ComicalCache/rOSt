@@ -1,6 +1,6 @@
 #![no_std] // no standard library
 #![no_main]
-#![feature(custom_test_frameworks, abi_x86_interrupt)]
+#![feature(custom_test_frameworks, abi_x86_interrupt, generic_const_exprs, core_intrinsics)]
 #![test_runner(os_core::test_framework::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 // no entry point
@@ -9,7 +9,7 @@
 // #   This produces a runnable binary of the OS   #
 // #################################################
 
-use os_core::vga::{vga_core::{TextDrawable, PlainDrawable, ShapeDrawable}, vga_point::VGAPoint};
+use os_core::vga::{vga_core::{TextDrawable, PlainDrawable, ShapeDrawable}, point_2d::Point2D};
 use bootloader::{BootInfo, boot_info::FrameBuffer, entry_point};
 use os_core::vga::{vga_buffer::VGADeviceFactory, vga_core::Clearable, vga_color};
 use core::panic::PanicInfo;

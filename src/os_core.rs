@@ -1,5 +1,5 @@
 #![no_std]
-#![feature(abi_x86_interrupt)]
+#![feature(abi_x86_interrupt, generic_const_exprs, core_intrinsics)]
 
 // ########################################################
 // #   This library is the core of the operating system   #
@@ -8,7 +8,7 @@
 use bootloader::boot_info::FrameBuffer;
 
 
-pub use crate::interrupts::gtd;
+pub use crate::interrupts::gdt;
 pub use crate::test_framework::ansi_colors;
 use crate::test_framework::qemu_exit::exit_qemu;
 use crate::test_framework::qemu_exit::QemuExitCode;
@@ -20,6 +20,7 @@ pub mod interrupts;
 pub mod test_framework;
 pub mod vga;
 pub mod logger;
+pub mod structures;
 
 pub fn init(framebuffer: &'static mut FrameBuffer) {
     logger::init(framebuffer);

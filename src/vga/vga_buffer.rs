@@ -1,6 +1,8 @@
 use bootloader::boot_info::{FrameBuffer, FrameBufferInfo, PixelFormat};
 
-use super::{vga_core::{Clearable, PlainDrawable, TextDrawable, ShapeDrawable, Interpolatable}, vga_color::VGAColor, vga_point::VGAPoint};
+use crate::structures::static_stack::StaticStack;
+
+use super::{vga_core::{Clearable, PlainDrawable, TextDrawable, ShapeDrawable, Interpolatable}, vga_color::VGAColor, point_2d::Point2D};
 use noto_sans_mono_bitmap::{get_bitmap, get_bitmap_width, BitmapChar, BitmapHeight, FontWeight};
 
 pub struct VGADevice<'a> {
@@ -10,10 +12,10 @@ pub struct VGADevice<'a> {
 }
 
 impl Clearable for VGADevice<'_> {
-    fn clear(&mut self, color: &VGAColor) {
+    fn clear(&mut self, color: VGAColor<u8>) {
       for x in 0..self.frame_buffer_info.horizontal_resolution {
         for y in 0..self.frame_buffer_info.vertical_resolution {
-          self.draw_point(x, y, color);
+          self.draw_point(x as u16, y as u16, color);
         }
       }
     }
@@ -21,8 +23,10 @@ impl Clearable for VGADevice<'_> {
 
 impl PlainDrawable for VGADevice<'_> {
 
-  fn draw_point(&mut self, x: usize, y: usize, color: &VGAColor) {
-      let index = y * self.bytes_per_row + x * self.frame_buffer_info.bytes_per_pixel;
+  fn draw_point(&mut self, x: u16, y: u16, color: VGAColor<u8>) {
+      let _x = x as usize;
+      let _y = y as usize;
+      let index = _y * self.bytes_per_row + _x * self.frame_buffer_info.bytes_per_pixel;
       match self.frame_buffer_info.pixel_format {
         PixelFormat::RGB => {
           let frame_color = VGAColor{
@@ -31,7 +35,7 @@ impl PlainDrawable for VGADevice<'_> {
             blue: self.frame_pointer[index + 2],
             alpha: 255,
           };
-          let result_color = VGAColor::interpolate(&frame_color, color, color.alpha);
+          let result_color = VGAColor::interpolate(frame_color, color, color.alpha);
           self.frame_pointer[index + 0] = result_color.red;
           self.frame_pointer[index + 1] = result_color.green;
           self.frame_pointer[index + 2] = result_color.blue;
@@ -43,7 +47,7 @@ impl PlainDrawable for VGADevice<'_> {
             blue: self.frame_pointer[index + 0],
             alpha: 255,
           };
-          let result_color = VGAColor::interpolate(&frame_color, color, color.alpha);
+          let result_color = VGAColor::interpolate(frame_color, color, color.alpha);
           self.frame_pointer[index + 2] = result_color.red;
           self.frame_pointer[index + 1] = result_color.green;
           self.frame_pointer[index + 0] = result_color.blue;
@@ -58,13 +62,13 @@ impl PlainDrawable for VGADevice<'_> {
         _ => todo!("Unsupported pixel format: {:?}", self.frame_buffer_info.pixel_format)
       }
     }
-  fn draw_point_p(&mut self, p: &VGAPoint, color: &VGAColor) {
+  fn draw_point_p(&mut self, p: Point2D<u16>, color: VGAColor<u8>) {
     self.draw_point(p.x, p.y, color);
   }
 
-  fn draw_line(&mut self, x1: usize, y1: usize, x2: usize, y2: usize, color: &VGAColor) {
-      let ix2: isize = x2.try_into().unwrap();
-      let iy2: isize = y2.try_into().unwrap();
+  fn draw_line(&mut self, x1: u16, y1: u16, x2: u16, y2: u16, color: VGAColor<u8>) {
+      let ix2: isize = x2 as isize;
+      let iy2: isize = y2 as isize;
       // Bresenham's algorithm
 
       let mut x = x1 as isize;
@@ -95,7 +99,7 @@ impl PlainDrawable for VGADevice<'_> {
           yi = -1;
           dy = (y1 - y2) as isize;
       }
-      self.draw_point(x as usize, y as usize, color);
+      self.draw_point(x as u16, y as u16, color);
 
       let ai;
       let bi;
@@ -120,7 +124,7 @@ impl PlainDrawable for VGADevice<'_> {
                   d += bi;
                   x += xi;
               }
-              self.draw_point(x as usize, y as usize, color);
+              self.draw_point(x as u16, y as u16, color);
           }
       }
       // oś wiodąca OY
@@ -144,56 +148,79 @@ impl PlainDrawable for VGADevice<'_> {
                   d += bi;
                   y += yi;
               }
-              self.draw_point(x as usize, y as usize, color);
+              self.draw_point(x as u16, y as u16, color);
           }
       }
   }
-  fn draw_line_p(&mut self, a: &VGAPoint, b: &VGAPoint, color: &VGAColor) {
-      self.draw_line(a.x, a.y, b.x, b.y, color);
+  fn draw_line_p(&mut self, a: Point2D<u16>, b: Point2D<u16>, color: VGAColor<u8>) {
+      self.draw_line(
+        a.x,
+        a.y,
+        b.x,
+        b.y,
+        color
+      );
     }
 
-  fn draw_bezier(&mut self, p1: &VGAPoint, p2: &VGAPoint, p3: &VGAPoint, p4: &VGAPoint, color: &VGAColor) {
-    for t in 0..16 {
-        self.draw_point_p(&bezier_point(p1, p2, p3, p4, t * 4095), color);
+  fn draw_bezier(&mut self, p1: Point2D<u16>, p2: Point2D<u16>, p3: Point2D<u16>, p4: Point2D<u16>, color: VGAColor<u8>) {
+    let mut t_stack: StaticStack<(f32, f32), 32> = StaticStack::new();
+    t_stack.push(&(0f32, 1f32));
+    while t_stack.length() > 0 {
+        let frame = t_stack.pop();
+        let a = bezier_point(p1, p2, p3, p4, frame.0);
+        let b = bezier_point(p1, p2, p3, p4, frame.1);
+        if a.sqr_distance::<i32>(b) > 9 {
+            let mid = (frame.1 + frame.0) * 0.5;
+            t_stack.push(&(frame.0, mid));
+            t_stack.push(&(mid, frame.1));
+        } else {
+            self.draw_line_p(a, b, color);
+        }
     }
   }
 }
 
-fn bezier_point(p1: &VGAPoint, p2: &VGAPoint, p3: &VGAPoint, p4: &VGAPoint, t: u16) -> VGAPoint {
-  let a = VGAPoint::interpolate(p1, p2, t);
-  let b = VGAPoint::interpolate(p3, p4, t);
-  VGAPoint::interpolate(&a, &b, t)
+fn bezier_point(p1: Point2D<u16>, p2: Point2D<u16>, p3: Point2D<u16>, p4: Point2D<u16>, t: f32) -> Point2D<u16> {
+  let t_1 = 1f32 - t;
+  let t2 = t * t;
+  let t_1_2 = t_1 * t_1;
+  let _p1: Point2D<f32> = p1.into();
+  let _p2: Point2D<f32> = p2.into();
+  let _p3: Point2D<f32> = p3.into();
+  let _p4: Point2D<f32> = p4.into();
+  Point2D { x: 0, y: 0 }
 }
 
 impl ShapeDrawable for VGADevice<'_> {
 
-  fn draw_rectangle(&mut self, x: usize, y: usize, width: usize, height: usize, color: &VGAColor) {
+  fn draw_rectangle(&mut self, x: u16, y: u16, width: u16, height: u16, color: VGAColor<u8>) {
     self.draw_line(x, y, x + width, y, color);
     self.draw_line(x, y + height, x + width, y + height, color);
     self.draw_line(x, y, x, y + height, color);
     self.draw_line(x + width, y, x + width, y + height, color);
   }
-  fn draw_rectangle_p(&mut self, a: &VGAPoint, b: &VGAPoint, color: &VGAColor) {
-    self.draw_rectangle(a.x, a.y, b.x - a.x, b.y - a.y, color);
+  fn draw_rectangle_p(&mut self, min: Point2D<u16>, max: Point2D<u16>, color: VGAColor<u8>) {
+    self.draw_rectangle(min.x, min.y, max.x - min.x, max.y - min.y, color);
   }
 
-  fn fill_rectangle(&mut self, x: usize, y: usize, width: usize, height: usize, color: &VGAColor) {
+  fn fill_rectangle(&mut self, x: u16, y: u16, width: u16, height: u16, color: VGAColor<u8>) {
       for i in x..x + width {
           for j in y..y + height {
               self.draw_point(i, j, color);
           }
       }
   }
-  fn fill_rectangle_p(&mut self, a: &VGAPoint, b: &VGAPoint, color: &VGAColor) {
-    self.fill_rectangle(a.x, a.y, b.x - a.x, b.y - a.y, color);
+  fn fill_rectangle_p(&mut self, min: Point2D<u16>, max: Point2D<u16>, color: VGAColor<u8>) {
+    self.fill_rectangle(min.x, min.y, max.x - min.x, max.y - min.y, color);
   }
 
 }
 
 impl TextDrawable for VGADevice<'_> {
-    fn draw_string(&mut self, x: usize, y: usize, color: &VGAColor, text: &str, reset_x: usize) -> (usize, usize) {
+    fn draw_string(&mut self, x: u16, y: u16, color: VGAColor<u8>, text: &str, reset_x: u16) -> (u16, u16) {
         let mut pos_x = x;
         let mut pos_y = y;
+        const BITMAP_LETTER_WIDTH: u16 = get_bitmap_width(FontWeight::Regular, BitmapHeight::Size14) as u16;
         for (_i, c) in text.chars().enumerate() {
           match c {
             '\n' => {
@@ -201,13 +228,13 @@ impl TextDrawable for VGADevice<'_> {
               pos_y += 14;
             },
             _ => {
-              const BITMAP_LETTER_WIDTH: usize = get_bitmap_width(FontWeight::Regular, BitmapHeight::Size14);
-              if pos_x + BITMAP_LETTER_WIDTH > self.frame_buffer_info.horizontal_resolution as usize {
+              if pos_x + BITMAP_LETTER_WIDTH > self.frame_buffer_info.horizontal_resolution as u16 {
                 pos_x = reset_x;
                 pos_y += 14;
               }
-              let bitmap_char = get_bitmap(c, FontWeight::Regular, BitmapHeight::Size14).unwrap();
-              self.draw_char(pos_x, pos_y, bitmap_char, color);
+              let bitmap_char = get_bitmap(c, FontWeight::Regular, BitmapHeight::Size14)
+                .or_else( || get_bitmap(' ', FontWeight::Regular, BitmapHeight::Size14));
+              self.draw_char(pos_x, pos_y, bitmap_char.unwrap(), color);
               pos_x += BITMAP_LETTER_WIDTH;
             }
           }
@@ -215,9 +242,10 @@ impl TextDrawable for VGADevice<'_> {
         (pos_x, pos_y)
     }
 
-    fn measure_string(&self, x: usize, y: usize, text: &str, reset_x: usize) -> (usize, usize) {
+    fn measure_string(&self, x: u16, y: u16, text: &str, reset_x: u16) -> (u16, u16) {
       let mut pos_x = x;
       let mut pos_y = y;
+      const BITMAP_LETTER_WIDTH: u16 = get_bitmap_width(FontWeight::Regular, BitmapHeight::Size14) as u16;
       for (_i, c) in text.chars().enumerate() {
         match c {
           '\n' => {
@@ -225,9 +253,8 @@ impl TextDrawable for VGADevice<'_> {
             pos_y += 14;
           },
           _ => {
-            const BITMAP_LETTER_WIDTH: usize = get_bitmap_width(FontWeight::Regular, BitmapHeight::Size14);
             pos_x += BITMAP_LETTER_WIDTH;
-            if pos_x > self.frame_buffer_info.horizontal_resolution as usize {
+            if pos_x > self.frame_buffer_info.horizontal_resolution as u16 {
               pos_x = reset_x;
               pos_y += 14;
             }
@@ -239,10 +266,10 @@ impl TextDrawable for VGADevice<'_> {
 }
 
 impl VGADevice<'_> {
-  fn draw_char(&mut self, x: usize, y: usize, char: BitmapChar, color: &VGAColor) {
+  fn draw_char(&mut self, x: u16, y: u16, char: BitmapChar, color: VGAColor<u8>) {
     for (iy, row) in char.bitmap().iter().enumerate() {
       for (ix, byte) in row.iter().enumerate() {
-          self.draw_point(ix + x, iy + y, &color.multiply_alpha(*byte));
+          self.draw_point(ix as u16 + x, iy as u16 + y, color.mul_alpha(*byte));
       }
     }
   }

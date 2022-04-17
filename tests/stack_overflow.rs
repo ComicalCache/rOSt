@@ -24,7 +24,7 @@ pub extern "C" fn _start() -> ! {
     serial_println!("{} 1 {}", Yellow("Running"), Yellow("test(s):"));
 
     serial_print!("stack_overflow::stack_overflow_test...");
-    os_core::gtd::init_gdt();
+    os_core::gdt::init_gdt();
     init_test_idt();
 
     stack_overflow();
@@ -61,7 +61,7 @@ lazy_static! {
         unsafe {
             idt.double_fault
                 .set_handler_fn(test_double_fault_handler)
-                .set_stack_index(os_core::interrupts::gtd::DOUBLE_FAULT_IST_INDEX);
+                .set_stack_index(os_core::interrupts::gdt::DOUBLE_FAULT_IST_INDEX);
         }
 
         idt
