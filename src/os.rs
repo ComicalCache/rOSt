@@ -51,7 +51,7 @@ pub fn kernel_main(boot_info: &'static mut BootInfo) {
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    os_core::print!("{}", info);
+    os_core::log_print!("{}", info);
     hlt_loop();
 }
 

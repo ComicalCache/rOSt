@@ -86,13 +86,13 @@ impl fmt::Write for Logger {
 
 #[macro_export]
 /// Prints a string to the VGA buffer
-macro_rules! print {
+macro_rules! log_print {
     ($($arg:tt)*) => ($crate::logger::__print(format_args!($($arg)*)));
 }
 
 #[macro_export]
 /// Prints a string to the VGA buffer and appends a newline
-macro_rules! println {
+macro_rules! log_println {
     () => ($crate::print!("\n"));
-    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
+    ($($arg:tt)*) => ($crate::log_print!("{}\n", format_args!($($arg)*)));
 }
