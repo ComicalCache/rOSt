@@ -4,7 +4,10 @@ use core::fmt;
 use bootloader::boot_info::FrameBuffer;
 use spin::Mutex;
 use lazy_static::lazy_static;
-use crate::vga::{vga_buffer::{VGADevice, VGADeviceFactory}, vga_color, vga_core::{TextDrawable, Clearable}};
+use crate::vga::{vga_buffer::{VGADevice, VGADeviceFactory}, vga_color, vga_core::{TextDrawable, Clearable, CHAR_HEIGHT}};
+
+const LOGGER_START_INDENT_X: u16 = 32;
+const LOGGER_START_INDENT_Y: u16 = 2 * CHAR_HEIGHT as u16;
 
 lazy_static! {
   pub static ref LOGGER: Mutex<Option<Logger>> = Mutex::new(Option::None);
@@ -39,9 +42,9 @@ impl Logger {
       self.device.clear(vga_color::CLAY);
       self.__log("OOPS - Something went wrong. Better check what it was using the stackframe:");
       if self.x > 0 {
-        self.x = 32;
-        self.start_x = 32;
-        self.y += 28;
+        self.x = LOGGER_START_INDENT_X;
+        self.start_x = LOGGER_START_INDENT_X;
+        self.y += LOGGER_START_INDENT_Y;
       }
       self.took_over = true;
     }
@@ -52,7 +55,7 @@ impl Logger {
     self.log(text);
     if self.x > 0 {
       self.x = 0;
-      self.y += 14;
+      self.y += CHAR_HEIGHT as u16;
     }
   }
 }

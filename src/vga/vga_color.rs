@@ -1,129 +1,186 @@
-use core::ops::{Add, Sub, Mul, Div};
-
-use super::vga_core::Interpolatable;
+use core::ops::{Add, Div, Mul, Sub};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct VGAColor<T> {
     pub red: T,
     pub green: T,
     pub blue: T,
-    pub alpha: T
+    pub alpha: T,
 }
-pub static TRANSPARENT: VGAColor<u8> = VGAColor { red: 0, green: 0, blue: 0, alpha: 0 };
-pub static WHITE: VGAColor<u8> = VGAColor { red: 255, green: 255, blue: 255, alpha: 255 };
-pub static BLACK: VGAColor<u8> = VGAColor { red: 0, green: 0, blue: 0, alpha: 255 };
-pub static RED: VGAColor<u8> = VGAColor { red: 255, green: 0, blue: 0, alpha: 255 };
-pub static GREEN: VGAColor<u8> = VGAColor { red: 0, green: 255, blue: 0, alpha: 255 };
-pub static BLUE: VGAColor<u8> = VGAColor { red: 0, green: 0, blue: 255, alpha: 255 };
-pub static CLAY: VGAColor<u8> = VGAColor{ red: 128, green: 64, blue: 11, alpha: 255 };
-pub static CHARLOTTE: VGAColor<u8> = VGAColor { red: 161, green: 232, blue: 223, alpha: 255 };
+pub static TRANSPARENT: VGAColor<u8> = VGAColor {
+    red: 0,
+    green: 0,
+    blue: 0,
+    alpha: 0,
+};
+pub static WHITE: VGAColor<u8> = VGAColor {
+    red: 255,
+    green: 255,
+    blue: 255,
+    alpha: 255,
+};
+pub static BLACK: VGAColor<u8> = VGAColor {
+    red: 0,
+    green: 0,
+    blue: 0,
+    alpha: 255,
+};
+pub static RED: VGAColor<u8> = VGAColor {
+    red: 255,
+    green: 0,
+    blue: 0,
+    alpha: 255,
+};
+pub static GREEN: VGAColor<u8> = VGAColor {
+    red: 0,
+    green: 255,
+    blue: 0,
+    alpha: 255,
+};
+pub static BLUE: VGAColor<u8> = VGAColor {
+    red: 0,
+    green: 0,
+    blue: 255,
+    alpha: 255,
+};
+pub static CLAY: VGAColor<u8> = VGAColor {
+    red: 128,
+    green: 64,
+    blue: 11,
+    alpha: 255,
+};
+pub static CHARLOTTE: VGAColor<u8> = VGAColor {
+    red: 161,
+    green: 232,
+    blue: 223,
+    alpha: 255,
+};
 
-impl Interpolatable<u8> for VGAColor<u8> {
-  fn interpolate(a: VGAColor<u8>, b: VGAColor<u8>, t: u8) -> VGAColor<u8> {
-    let _t = t as u16;
-    let t1 = 255 - _t;
-    VGAColor {
-      red: ((a.red as u16 * t1 + b.red as u16 * _t)/255) as u8,
-      green: ((a.green as u16 * t1 + b.green as u16 * _t)/255) as u8,
-      blue: ((a.blue as u16 * t1 + b.blue as u16 * _t)/255) as u8,
-      alpha: ((a.alpha as u16 * t1 + b.alpha as u16 * _t)/255) as u8
+impl VGAColor<u8> {
+    pub fn interpolate(a: VGAColor<u8>, b: VGAColor<u8>, t: u8) -> VGAColor<u8> {
+        let _t = t as u16;
+        let t1 = 255 - _t;
+        VGAColor {
+            red: ((a.red as u16 * t1 + b.red as u16 * _t) / 255) as u8,
+            green: ((a.green as u16 * t1 + b.green as u16 * _t) / 255) as u8,
+            blue: ((a.blue as u16 * t1 + b.blue as u16 * _t) / 255) as u8,
+            alpha: ((a.alpha as u16 * t1 + b.alpha as u16 * _t) / 255) as u8,
+        }
     }
-  }
 }
 
-impl<T> Add for VGAColor<T> where T: core::ops::Add<Output = T> {
-  type Output = VGAColor<T>;
+impl<T> Add for VGAColor<T>
+where
+    T: core::ops::Add<Output = T>,
+{
+    type Output = VGAColor<T>;
 
-  fn add(self, rhs: Self) -> Self::Output {
-      VGAColor {
-          red: self.red + rhs.red,
-          green: self.green + rhs.green,
-          blue: self.blue + rhs.blue,
-          alpha: self.alpha + rhs.alpha,
-      }
-  }
+    fn add(self, rhs: Self) -> Self::Output {
+        VGAColor {
+            red: self.red + rhs.red,
+            green: self.green + rhs.green,
+            blue: self.blue + rhs.blue,
+            alpha: self.alpha + rhs.alpha,
+        }
+    }
 }
 
-impl<T> Sub for VGAColor<T> where T: core::ops::Sub<Output = T> {
-  type Output = VGAColor<T>;
+impl<T> Sub for VGAColor<T>
+where
+    T: core::ops::Sub<Output = T>,
+{
+    type Output = VGAColor<T>;
 
-  fn sub(self, rhs: Self) -> Self::Output {
-      VGAColor {
-          red: self.red - rhs.red,
-          green: self.green - rhs.green,
-          blue: self.blue - rhs.blue,
-          alpha: self.alpha - rhs.alpha,
-      }
-  }
+    fn sub(self, rhs: Self) -> Self::Output {
+        VGAColor {
+            red: self.red - rhs.red,
+            green: self.green - rhs.green,
+            blue: self.blue - rhs.blue,
+            alpha: self.alpha - rhs.alpha,
+        }
+    }
 }
 
-impl<T> Mul for VGAColor<T> where T: core::ops::Mul<Output = T> {
-  type Output = VGAColor<T>;
+impl<T> Mul for VGAColor<T>
+where
+    T: core::ops::Mul<Output = T>,
+{
+    type Output = VGAColor<T>;
 
-  fn mul(self, rhs: Self) -> Self::Output {
-      VGAColor {
-          red: self.red * rhs.red,
-          green: self.green * rhs.green,
-          blue: self.blue * rhs.blue,
-          alpha: self.alpha * rhs.alpha,
-      }
-  }
+    fn mul(self, rhs: Self) -> Self::Output {
+        VGAColor {
+            red: self.red * rhs.red,
+            green: self.green * rhs.green,
+            blue: self.blue * rhs.blue,
+            alpha: self.alpha * rhs.alpha,
+        }
+    }
 }
 
-impl<T> Mul<T> for VGAColor<T> where T: core::ops::Mul<Output = T> + Copy {
-  type Output = VGAColor<T>;
+impl<T> Mul<T> for VGAColor<T>
+where
+    T: core::ops::Mul<Output = T> + Copy,
+{
+    type Output = VGAColor<T>;
 
-  fn mul(self, rhs: T) -> Self::Output {
-      VGAColor {
-          red: self.red * rhs,
-          green: self.green * rhs,
-          blue: self.blue * rhs,
-          alpha: self.alpha * rhs,
-      }
-  }
+    fn mul(self, rhs: T) -> Self::Output {
+        VGAColor {
+            red: self.red * rhs,
+            green: self.green * rhs,
+            blue: self.blue * rhs,
+            alpha: self.alpha * rhs,
+        }
+    }
 }
 
-impl<T> Div for VGAColor<T> where T: core::ops::Div<Output = T> {
-  type Output = VGAColor<T>;
+impl<T> Div for VGAColor<T>
+where
+    T: core::ops::Div<Output = T>,
+{
+    type Output = VGAColor<T>;
 
-  fn div(self, rhs: Self) -> Self::Output {
-      VGAColor {
-          red: self.red / rhs.red,
-          green: self.green / rhs.green,
-          blue: self.blue / rhs.blue,
-          alpha: self.alpha / rhs.alpha,
-      } 
-  }
+    fn div(self, rhs: Self) -> Self::Output {
+        VGAColor {
+            red: self.red / rhs.red,
+            green: self.green / rhs.green,
+            blue: self.blue / rhs.blue,
+            alpha: self.alpha / rhs.alpha,
+        }
+    }
 }
 
-impl<T> Div<T> for VGAColor<T> where T: core::ops::Div<Output = T> + Copy {
-  type Output = VGAColor<T>;
+impl<T> Div<T> for VGAColor<T>
+where
+    T: core::ops::Div<Output = T> + Copy,
+{
+    type Output = VGAColor<T>;
 
-  fn div(self, rhs: T) -> Self::Output {
-      VGAColor {
-          red: self.red / rhs,
-          green: self.green / rhs,
-          blue: self.blue / rhs,
-          alpha: self.alpha / rhs,
-      } 
-  }
+    fn div(self, rhs: T) -> Self::Output {
+        VGAColor {
+            red: self.red / rhs,
+            green: self.green / rhs,
+            blue: self.blue / rhs,
+            alpha: self.alpha / rhs,
+        }
+    }
 }
 
-impl<T> VGAColor<T> where T: Into<u32> + Copy {
-  pub fn to_grayscale(self) -> u32 {
-    (self.red.into() * 299 +
-    self.green.into() * 587 +
-    self.blue.into() * 114) / 1000
-  }
+impl<T> VGAColor<T>
+where
+    T: Into<u32> + Copy,
+{
+    pub fn to_grayscale(self) -> u32 {
+        (self.red.into() * 299 + self.green.into() * 587 + self.blue.into() * 114) / 1000
+    }
 }
 
 impl VGAColor<u8> {
-  pub fn mul_alpha(self, opacity: u8) -> VGAColor<u8> {
-    VGAColor {
-      red: self.red,
-      green: self.green,
-      blue: self.blue,
-      alpha: ((self.alpha as u16 * opacity as u16)/255) as u8
+    pub fn mul_alpha(self, opacity: u8) -> VGAColor<u8> {
+        VGAColor {
+            red: self.red,
+            green: self.green,
+            blue: self.blue,
+            alpha: ((self.alpha as u16 * opacity as u16) / 255) as u8,
+        }
     }
-  }
 }
