@@ -6,3 +6,8 @@ kbuild = "build --target x86_64-custom.json -Zbuild-std=core -Zbuild-std-feature
 kimage = "run --target x86_64-custom.json -Zbuild-std=core -Zbuild-std-features=compiler-builtins-mem -- --no-run"
 krun = "run --target x86_64-custom.json -Zbuild-std=core -Zbuild-std-features=compiler-builtins-mem"
 ktest = "test --target x86_64-custom.json --bins -Zbuild-std=core -Zbuild-std-features=compiler-builtins-mem"
+ktest_all = ["ktest", 
+    "--test", "interrupts",
+    #"--test", "print_logger_text",
+    "--test", "stack_overflow"
+]

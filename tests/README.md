@@ -7,7 +7,9 @@ When writing tests it's <u>important</u> to use the `serial_print!` and `serial_
 All tests should be placed in the [tests](/tests/) directory.
 
 ## How to run tests
-To run all tests simply run `cargo t`.
+To run all tests simply run `cargo ktest_all`.
+
+To run specific tests run `cargo ktest --test <test_name>`.
 
 ## Setup tests
 
@@ -23,14 +25,18 @@ All test files require some boilerplate to work correctly. First create a file a
 
 use core::panic::PanicInfo;
 
+use bootloader::{BootInfo, entry_point};
+use os_core::println;
+
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     os_core::test_panic_handler(info)
 }
 
+entry_point!(kernel_start);
 #[no_mangle]
-pub extern "C" fn _start() -> ! {
-    os_core::init();
+pub fn kernel_start(_boot_info: &'static mut BootInfo) -> ! {
+    os_core::init(_boot_info.framebuffer.as_mut().take().unwrap());
     test_main();
     loop {}
 }
@@ -43,11 +49,13 @@ fn my_test_case() {
 }
 ```
 
-Then go to [.cargo/config.toml](/.cargo/config.toml) and <u>append</u> the `t` alias with the new file you added:
+Then go to [.cargo/config.toml](/.cargo/config.toml) and <u>append</u> the `ktest_all` alias with the new file you added:
 ```toml
 # ...
 [alias]
-t = ["...", "--test", "my_tests"]
+ktest_all = ["...", 
+    "--test", "my_tests"
+]
 ```
 
 ## Setup tests that fail
@@ -58,6 +66,9 @@ For setting up tests that fail we need to do things a bit differently. First cre
 ```rust
 #![no_std]
 #![no_main]
+#![feature(custom_test_frameworks)]
+#![test_runner(os_core::test_framework::test_runner)]
+#![reexport_test_harness_main = "test_main"]
 
 use core::panic::PanicInfo;
 
@@ -90,11 +101,14 @@ fn my_failing_test_case() {
 }
 ```
 
-Then go to [.cargo/config.toml](/.cargo/config.toml) and <u>append</u> the `t` alias with the new file you added:
+Then go to [.cargo/config.toml](/.cargo/config.toml) and <u>append</u> the `ktest_all` alias with the new file you added:
 ```toml
 # ...
 [alias]
-t = ["...", "--test", "my_failing_test"]
+ktest_all = ["...", 
+    "--test", 
+    "my_failing_test"
+]
 ```
 Additionally you also need to add the following to [Cargo.toml](/Cargo.toml):
 ```toml
