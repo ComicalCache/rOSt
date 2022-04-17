@@ -7,6 +7,7 @@
 use core::panic::PanicInfo;
 
 use bootloader::{BootInfo, entry_point};
+use os_core::println;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
@@ -22,7 +23,13 @@ pub fn kernel_start(_boot_info: &'static mut BootInfo) -> ! {
 }
 
 #[test_case]
-pub fn interrupt_test() {
-    x86_64::instructions::interrupts::int3();
-    // if execution reaches this point, the test has passed
+pub fn simple_print_test() {
+    println!("Hello, World!");
+}
+
+#[test_case]
+pub fn bulk_print_test() {
+    for _ in 0..250 {
+        println!("Hello, World!");
+    }
 }

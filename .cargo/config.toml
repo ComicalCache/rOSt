@@ -1,18 +1,8 @@
-[build]
-target = "target.json" # automatic `--target target.json` flat
-
-[unstable]
-build-std-features = ["compiler-builtins-mem"] # rebuilds the builtin memory functions without c bindings
-build-std = ["core", "compiler_builtins"] # rebuilds standard library functions without c bindings
-
 [target.'cfg(target_os = "none")']
-runner = "bootimage runner" # `cargo run`
+runner = "cargo run --package boot --"
 
 [alias]
-# registers all tests in the `tests` directory
-t = ["test", 
-    "--test", "print_vga_text",
-    "--test", "illegal_cursor_position",
-    "--test", "interrupts",
-    "--test", "stack_overflow",
-]
+kbuild = "build --target x86_64-custom.json -Zbuild-std=core -Zbuild-std-features=compiler-builtins-mem"
+kimage = "run --target x86_64-custom.json -Zbuild-std=core -Zbuild-std-features=compiler-builtins-mem -- --no-run"
+krun = "run --target x86_64-custom.json -Zbuild-std=core -Zbuild-std-features=compiler-builtins-mem"
+ktest = "test --target x86_64-custom.json --bins -Zbuild-std=core -Zbuild-std-features=compiler-builtins-mem"

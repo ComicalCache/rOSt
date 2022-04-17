@@ -1,71 +1,69 @@
 #![no_std] // no standard library
 #![no_main]
+#![feature(custom_test_frameworks, abi_x86_interrupt)]
+#![test_runner(os_core::test_framework::test_runner)]
+#![reexport_test_harness_main = "test_main"]
 // no entry point
 
 // #################################################
 // #   This produces a runnable binary of the OS   #
 // #################################################
 
-// configures our test framework environment
-#![feature(custom_test_frameworks, abi_x86_interrupt)]
-#![test_runner(os_core::test_framework::test_runner)]
-#![reexport_test_harness_main = "test_main"]
-
+use os_core::vga::vga_core::{TextDrawable, PlainDrawable};
+use bootloader::{BootInfo, boot_info::FrameBuffer, entry_point};
+use os_core::vga::{vga_buffer::VGADeviceFactory, vga_core::Clearable, vga_color};
 use core::panic::PanicInfo;
 
-use os_core::{hlt_loop, interface::VGA_TEXT_BUFFER_INTERFACE, print, vga::text::CursorMode};
+use os_core::hlt_loop;
 
-#[no_mangle]
-// entry point of the program
-pub extern "C" fn _start() -> ! {
-    // initialisation steps of the OS
-    // ! DO NOT REMOVE!
-    os_core::init();
-
-    // `cargo test` entry point.
-    // ! DO NOT REMOVE!
+entry_point!(kernel);
+pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
     #[cfg(test)]
-    test_main();
-
-    // ########################################
-    // # _start() actual entry on `cargo run` #
-    // ########################################
-
-    VGA_TEXT_BUFFER_INTERFACE.lock().set_pos(12, 33);
-    VGA_TEXT_BUFFER_INTERFACE
-        .lock()
-        .set_cursor(CursorMode::Block);
-    print!("Hello, World!");
-
+    kernel_test(boot_info);
+    #[cfg(not(test))]
+    kernel_main(boot_info);
     hlt_loop();
 }
 
-// ################################################################
-// #   Defines panic handlers for testing and regular execution   #
-// ################################################################
+pub fn kernel_main(boot_info: &'static mut BootInfo) {
+    
+    let framebuffer_pointer: *mut FrameBuffer = boot_info.framebuffer.as_mut().unwrap();
+
+    let os_framebuffer = unsafe { framebuffer_pointer.as_mut().unwrap() };
+    os_core::init(os_framebuffer);
+
+    let usable_framebuffer = unsafe { framebuffer_pointer.as_mut().unwrap() };
+
+
+    let mut device = VGADeviceFactory::from_buffer(usable_framebuffer);
+    device.clear(&vga_color::BLACK);
+    device.draw_string(10, 10, &vga_color::WHITE, "Hello, world!", 0);
+    device.fill_rectangle(100, 50, 50, 70, &vga_color::GREEN);
+    device.draw_rectangle(0, 0, 250, 270, &vga_color::RED);
+
+    // this causes a panic and the OS will handle it
+    
+    //unsafe {
+    //    *(0xdeadbeef as *mut u64) = 42;
+    //};
+}
 
 #[cfg(not(test))]
 #[panic_handler]
-// this function is called if a panic occurs and is not a test, all output is redirected to the VGA buffer
 fn panic(info: &PanicInfo) -> ! {
-    #[allow(unused_imports)]
-    use os_core::{interface::VGA_TEXT_BUFFER_INTERFACE, print};
-
-    // needs to force unlock the VgaTextBufferInterface because it could be locked when the panic occurs
-    // this should be safe because the panic handler is the last thing that is executed
-    unsafe { VGA_TEXT_BUFFER_INTERFACE.force_unlock() };
-    VGA_TEXT_BUFFER_INTERFACE.lock().__set_panic_config();
-
-    print!("{}", info);
-
+    os_core::print!("{}", info);
     hlt_loop();
+}
+
+#[cfg(test)]
+pub fn kernel_test(boot_info: &'static mut BootInfo) {
+    os_core::init(boot_info.framebuffer.as_mut().unwrap());
+    test_main();
 }
 
 #[cfg(test)]
 #[panic_handler]
 // this function is called if a panic occurs and it is a test, all output is redirected to the serial port
 fn panic(info: &PanicInfo) -> ! {
-    use os_core::test_panic_handler;
-
-    test_panic_handler(info)
+    os_core::test_panic_handler(info);
 }
