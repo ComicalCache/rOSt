@@ -57,6 +57,7 @@ pub static CHARLOTTE: VGAColor<u8> = VGAColor {
 };
 
 impl VGAColor<u8> {
+    /// Interpolates between two colors, where t=0 -> First color, t=255 -> Second color
     pub fn interpolate(a: VGAColor<u8>, b: VGAColor<u8>, t: u8) -> VGAColor<u8> {
         let _t = t as u16;
         let t1 = 255 - _t;
@@ -169,12 +170,14 @@ impl<T> VGAColor<T>
 where
     T: Into<u32> + Copy,
 {
+    /// Returns the value for the grayscale version of the color, using the human light perception formula
     pub fn to_grayscale(self) -> u32 {
         (self.red.into() * 299 + self.green.into() * 587 + self.blue.into() * 114) / 1000
     }
 }
 
 impl VGAColor<u8> {
+    /// Multiplies only the alpha value by the opacity value, returning a new color with alpha scaled back to 0-255.
     pub fn mul_alpha(self, opacity: u8) -> VGAColor<u8> {
         VGAColor {
             red: self.red,

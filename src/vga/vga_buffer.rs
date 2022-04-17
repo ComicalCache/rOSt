@@ -107,13 +107,13 @@ impl PlainDrawable for VGADevice<'_> {
         let ai;
         let bi;
         let mut d: isize;
+        // OX axis
         if dx > dy {
             ai = (dy - dx) * 2;
             bi = dy * 2;
             d = bi - dx;
-            // pętla po kolejnych x
+            // Loop over next Xs
             while x != ix2 {
-                // test współczynnika
                 if d >= 0 {
                     x += xi;
                     y += yi;
@@ -125,14 +125,13 @@ impl PlainDrawable for VGADevice<'_> {
                 self.draw_point(x as u16, y as u16, color);
             }
         }
-        // oś wiodąca OY
+        // OY axis
         else {
             ai = (dx - dy) * 2;
             bi = dx * 2;
             d = bi - dy;
-            // pętla po kolejnych y
+            // Loop over next Ys
             while y != iy2 {
-                // test współczynnika
                 if d >= 0 {
                     x += xi;
                     y += yi;
