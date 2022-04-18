@@ -24,7 +24,7 @@ use os_core::vga::vga_color, vga_core::Clearable};
 */
 use os_core::vga::vga_buffer::VGADeviceFactory;
 
-use os_core::hlt_loop;
+use os_core::{hlt_loop, log_print};
 
 entry_point!(kernel);
 pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
@@ -44,6 +44,7 @@ pub fn kernel_main(boot_info: &'static mut BootInfo) {
     let usable_framebuffer = unsafe { framebuffer_pointer.as_mut().unwrap() };
 
     let mut _device = VGADeviceFactory::from_buffer(usable_framebuffer);
+    log_print!("{:#?}", boot_info.physical_memory_offset);
 }
 
 #[cfg(not(test))]

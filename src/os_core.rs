@@ -40,7 +40,7 @@ pub fn hlt_loop() -> ! {
 }
 
 pub fn test_panic_handler(info: &PanicInfo) -> ! {
-    serial_println!("{}", ansi_colors::Red("[failed]\n"));
+    serial_println!("{}\n", ansi_colors::Red("[failed]"));
     serial_println!("Error: {}\n", info);
     exit_qemu(QemuExitCode::Failed);
 

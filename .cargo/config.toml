@@ -10,5 +10,5 @@ ktest_all = ["ktest",
     "--test", "interrupts",
     #"--test", "print_logger_text",
     "--test", "stack_overflow",
-    "--test", "page_fault"
+    #"--test", "page_fault"
 ]
