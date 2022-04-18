@@ -9,8 +9,8 @@ use bootloader::boot_info::FrameBuffer;
 use lazy_static::lazy_static;
 use spin::Mutex;
 
-const LOGGER_START_INDENT_X: usize = 32;
-const LOGGER_START_INDENT_Y: usize = 2 * CHAR_HEIGHT as usize;
+const LOGGER_START_INDENT_X: u16 = 32;
+const LOGGER_START_INDENT_Y: u16 = 2 * CHAR_HEIGHT as u16;
 
 lazy_static! {
     pub static ref LOGGER: Mutex<Option<Logger>> = Mutex::new(Option::None);
@@ -26,9 +26,9 @@ pub fn init(framebuffer: &'static mut FrameBuffer) {
 }
 
 pub struct Logger {
-    x: usize,
-    y: usize,
-    start_x: usize,
+    x: u16,
+    y: u16,
+    start_x: u16,
     device: VGADevice<'static>,
     took_over: bool,
 }
@@ -37,14 +37,14 @@ impl Logger {
     fn __log(&mut self, text: &str) {
         let (x, y) =
             self.device
-                .draw_string(self.x, self.y, &vga_color::CHARLOTTE, text, self.start_x);
+                .draw_string(self.x, self.y, vga_color::CHARLOTTE, text, self.start_x);
         self.x = x;
         self.y = y;
     }
 
     pub fn log(&mut self, text: &str) {
         if !self.took_over {
-            self.device.clear(&vga_color::CLAY);
+            self.device.clear(vga_color::CLAY);
             self.__log(
                 "OOPS - Something went wrong. Better check what it was using the stackframe:",
             );
@@ -62,7 +62,7 @@ impl Logger {
         self.log(text);
         if self.x > 0 {
             self.x = 0;
-            self.y += CHAR_HEIGHT as usize;
+            self.y += CHAR_HEIGHT as u16;
         }
     }
 }
