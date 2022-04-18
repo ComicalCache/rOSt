@@ -14,8 +14,12 @@ lazy_static! {
 
         // set the interrupt stack table to the appropriate address
         tss.interrupt_stack_table[DOUBLE_FAULT_IST_INDEX as usize] = {
-            const STACK_SIZE: usize = 4096 * 5;
-            static mut STACK: [u8; STACK_SIZE] = [0; STACK_SIZE];
+            const STACK_SIZE: usize = 4096;
+
+            #[repr(align(16))]
+            struct Stack([u8; STACK_SIZE]);
+
+            static mut STACK: Stack = Stack([0; STACK_SIZE]);
 
             let stack_start = VirtAddr::from_ptr(unsafe { &STACK });
 
