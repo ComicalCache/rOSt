@@ -1,4 +1,5 @@
 #![no_std]
+#![allow(incomplete_features)]
 #![feature(abi_x86_interrupt, generic_const_exprs, core_intrinsics)]
 
 // ########################################################
@@ -6,7 +7,6 @@
 // ########################################################
 
 use bootloader::boot_info::FrameBuffer;
-
 
 pub use crate::interrupts::gdt;
 pub use crate::test_framework::ansi_colors;
@@ -17,10 +17,10 @@ pub use crate::test_framework::serial;
 use core::panic::PanicInfo;
 
 pub mod interrupts;
-pub mod test_framework;
-pub mod vga;
 pub mod logger;
 pub mod structures;
+pub mod test_framework;
+pub mod vga;
 
 pub fn init(framebuffer: &'static mut FrameBuffer) {
     logger::init(framebuffer);

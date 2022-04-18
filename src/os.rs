@@ -1,5 +1,6 @@
 #![no_std] // no standard library
 #![no_main]
+#![allow(incomplete_features)]
 #![feature(
     custom_test_frameworks,
     abi_x86_interrupt,
