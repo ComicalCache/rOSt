@@ -27,7 +27,7 @@ entry_point!(kernel_start);
 pub fn kernel_start(_boot_info: &'static mut BootInfo) -> ! {
     serial_println!("{} 1 {}", Yellow("Running"), Yellow("test(s):"));
 
-    serial_print!("stack_overflow::stack_overflow_test...");
+    serial_print!("stack_overflow::stack_overflow_test...\t");
     os_core::gdt::init_gdt();
     init_test_idt();
 

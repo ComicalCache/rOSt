@@ -17,9 +17,12 @@
 
 use bootloader::{boot_info::FrameBuffer, entry_point, BootInfo};
 use core::panic::PanicInfo;
+/*
 use os_core::vga::point_2d::Point2D;
 use os_core::vga::vga_core::{PlainDrawable, ShapeDrawable, TextDrawable};
-use os_core::vga::{vga_buffer::VGADeviceFactory, vga_color, vga_core::Clearable};
+use os_core::vga::vga_color, vga_core::Clearable};
+*/
+use os_core::vga::vga_buffer::VGADeviceFactory;
 
 use os_core::hlt_loop;
 
@@ -33,31 +36,14 @@ pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
 }
 
 pub fn kernel_main(boot_info: &'static mut BootInfo) {
+    // ? once we have a proper writer (should be instanciated in the os_core::init function) we should outsource
+    // ? the os_core::init call from kernel_main and kernel_test to the general kernel function since it will
     let framebuffer_pointer: *mut FrameBuffer = boot_info.framebuffer.as_mut().unwrap();
-
     let os_framebuffer = unsafe { framebuffer_pointer.as_mut().unwrap() };
     os_core::init(os_framebuffer);
-
     let usable_framebuffer = unsafe { framebuffer_pointer.as_mut().unwrap() };
 
-    let mut device = VGADeviceFactory::from_buffer(usable_framebuffer);
-    device.clear(vga_color::BLACK);
-    device.draw_string(10, 10, vga_color::WHITE, "Hello, world!", 0);
-    device.fill_rectangle(100, 50, 50, 70, vga_color::GREEN);
-    device.draw_rectangle(0, 0, 250, 270, vga_color::RED);
-    device.draw_bezier(
-        Point2D { x: 0, y: 0 },
-        Point2D { x: 250, y: 0 },
-        Point2D { x: 250, y: 270 },
-        Point2D { x: 0, y: 270 },
-        vga_color::WHITE,
-    );
-    // this causes a panic and the OS will handle it
-    /*
-    unsafe {
-        *(0xdeadbeef as *mut u64) = 42;
-    };
-    */
+    let mut _device = VGADeviceFactory::from_buffer(usable_framebuffer);
 }
 
 #[cfg(not(test))]
