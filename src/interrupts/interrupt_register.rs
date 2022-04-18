@@ -19,7 +19,7 @@ lazy_static! {
             idt.double_fault
                 .set_handler_fn(double_fault_handler)
                 // changes stack for double fault to avoid triple faults
-                .set_stack_index(crate::interrupts::gtd::DOUBLE_FAULT_IST_INDEX);
+                .set_stack_index(crate::interrupts::gdt::DOUBLE_FAULT_IST_INDEX);
         }
 
         // sets all the interrupt handlers for the appropriate PIC interrupts

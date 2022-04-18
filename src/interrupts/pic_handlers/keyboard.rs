@@ -8,8 +8,9 @@ use crate::{
     interrupts::{
         pic::InterruptIndex, pic_handlers::addresses::PS2_INTERRUPT_CONTROLLER_SCAN_CODE_PORT, PICS,
     },
-    print,
 };
+
+// ! ignore unused imports for now
 
 lazy_static! {
     static ref KEYBOARD: Mutex<Keyboard<layouts::Us104Key, ScancodeSet1>> = Mutex::new(
@@ -20,6 +21,7 @@ lazy_static! {
 pub extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStackFrame) {
     use x86_64::instructions::port::Port;
 
+    /*
     let mut keyboard = KEYBOARD.lock();
     let mut port = Port::new(PS2_INTERRUPT_CONTROLLER_SCAN_CODE_PORT);
     let scancode: u8 = unsafe { port.read() };
@@ -32,7 +34,7 @@ pub extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: Interrupt
                 DecodedKey::RawKey(key) => print!("{:?}", key),
             }
         }
-    }
+    }*/
 
     unsafe {
         PICS.lock()
