@@ -20,15 +20,7 @@ use bootloader::{
     entry_point, BootInfo,
 };
 use core::panic::PanicInfo;
-use x86_64::{structures::paging::Translate, VirtAddr};
-
-/*
-use os_core::vga::point_2d::Point2D;
-use os_core::vga::vga_core::{PlainDrawable, ShapeDrawable, TextDrawable};
-use os_core::vga::vga_color, vga_core::Clearable};
-*/
-use os_core::memory::page_table::init;
-use os_core::vga::vga_buffer::VGADeviceFactory;
+use os_core::basic_drivers::vga::vga_buffer::VGADeviceFactory;
 
 use os_core::{hlt_loop, log_println};
 
@@ -49,6 +41,7 @@ pub fn kernel_main(boot_info: &'static mut BootInfo) {
     let os_framebuffer = unsafe { framebuffer_pointer.as_mut().unwrap() };
     os_core::init(os_framebuffer);
     let usable_framebuffer = unsafe { framebuffer_pointer.as_mut().unwrap() };
+
     let mut _device = VGADeviceFactory::from_buffer(usable_framebuffer);
 
     if let Optional::Some(physical_memory_offset) = boot_info.physical_memory_offset {

@@ -1,6 +1,6 @@
 use core::fmt;
 
-use crate::vga::{
+use crate::basic_drivers::vga::{
     vga_buffer::{VGADevice, VGADeviceFactory},
     vga_color,
     vga_core::{Clearable, TextDrawable, CHAR_HEIGHT},
@@ -8,9 +8,6 @@ use crate::vga::{
 use bootloader::boot_info::FrameBuffer;
 use lazy_static::lazy_static;
 use spin::Mutex;
-
-const LOGGER_START_INDENT_X: u16 = 32;
-const LOGGER_START_INDENT_Y: u16 = 2 * CHAR_HEIGHT as u16;
 
 lazy_static! {
     /// Global logger instance that prints to the BSOD screen.
@@ -51,15 +48,7 @@ impl Logger {
     /// If the logger is called the first time it will draw the background and generic error heading text.
     pub fn log(&mut self, text: &str) {
         if !self.took_over {
-            self.device.clear(vga_color::CLAY);
-            self.__log(
-                "OOPS - Something went wrong. Better check what it was using the stackframe:",
-            );
-            if self.x > 0 {
-                self.x = LOGGER_START_INDENT_X;
-                self.start_x = LOGGER_START_INDENT_X;
-                self.y += LOGGER_START_INDENT_Y;
-            }
+            self.device.clear(vga_color::BSOD_BLUE);
             self.took_over = true;
         }
         self.__log(text);
@@ -101,6 +90,6 @@ macro_rules! log_print {
 #[macro_export]
 /// Prints a string to the VGA buffer and appends a newline
 macro_rules! log_println {
-    () => ($crate::print!("\n"));
+    () => ($crate::log_print!("\n"));
     ($($arg:tt)*) => ($crate::log_print!("{}\n", format_args!($($arg)*)));
 }

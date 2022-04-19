@@ -16,12 +16,12 @@ pub use crate::test_framework::serial;
 
 use core::panic::PanicInfo;
 
+pub mod basic_drivers;
 pub mod interrupts;
 pub mod logger;
 pub mod memory;
 pub mod structures;
 pub mod test_framework;
-pub mod vga;
 
 /// Initialises the components of the OS, **must** be called before any other functions.
 pub fn init(framebuffer: &'static mut FrameBuffer) {
