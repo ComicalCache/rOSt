@@ -8,7 +8,10 @@ pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
 /// Stores the interrupt address for a given interrupt type
 pub enum InterruptIndex {
     Timer = PIC_1_OFFSET,
-    Keyboard
+    Keyboard,
+
+    AtaPrimary = PIC_1_OFFSET + 14,
+    AtaSecondary,
 }
 
 impl InterruptIndex {
