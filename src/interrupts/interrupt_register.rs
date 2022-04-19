@@ -4,7 +4,10 @@ use x86_64::structures::idt::InterruptDescriptorTable;
 use crate::interrupts::{
     cpu_handlers::{breakpoint_handler, double_fault_handler, page_fault_handler},
     pic::InterruptIndex,
-    pic_handlers::{keyboard_interrupt_handler, timer_interrupt_handler},
+    pic_handlers::{
+        ata_primary_interrupt_handler, ata_secondary_interrupt_handler, keyboard_interrupt_handler,
+        timer_interrupt_handler,
+    },
 };
 
 lazy_static! {
@@ -33,6 +36,12 @@ lazy_static! {
             .set_handler_fn(timer_interrupt_handler);
         idt[InterruptIndex::Keyboard.as_usize()]
             .set_handler_fn(keyboard_interrupt_handler);
+
+        idt[InterruptIndex::AtaPrimary.as_usize()]
+            .set_handler_fn(ata_primary_interrupt_handler);
+
+        idt[InterruptIndex::AtaSecondary.as_usize()]
+            .set_handler_fn(ata_secondary_interrupt_handler);
 
         idt
     };
