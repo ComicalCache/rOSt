@@ -46,3 +46,6 @@ features = ["spin_no_std"]
 [[test]]
 name = "stack_overflow"
 harness = false
+[[test]]
+name = "page_fault"
+harness = false
