@@ -1,4 +1,5 @@
 use bootloader::boot_info::{FrameBuffer, FrameBufferInfo, PixelFormat};
+use noto_sans_mono_bitmap::{BitmapChar, get_bitmap};
 
 use crate::basic_drivers::vga::vga_core::CHAR_HEIGHT;
 use crate::structures::static_stack::StaticStack;
@@ -7,11 +8,10 @@ use super::{
     point_2d::Point2D,
     vga_color::VGAColor,
     vga_core::{
-        Clearable, PlainDrawable, ShapeDrawable, TextDrawable, CHAR_WEIGHT, CHAR_WIDTH,
-        INVALID_CHAR,
+        CHAR_WEIGHT, CHAR_WIDTH, Clearable, INVALID_CHAR, PlainDrawable, ShapeDrawable,
+        TextDrawable,
     },
 };
-use noto_sans_mono_bitmap::{get_bitmap, BitmapChar};
 
 pub struct VGADevice<'a> {
     frame_pointer: &'a mut [u8],
@@ -284,6 +284,7 @@ impl VGADevice<'_> {
 }
 
 pub struct VGADeviceFactory;
+
 impl VGADeviceFactory {
     pub fn from_buffer(frame_buffer: &mut FrameBuffer) -> VGADevice {
         let info = frame_buffer.info();

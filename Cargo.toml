@@ -28,6 +28,7 @@ uart_16550 = "0.2.17" # serial port interface used for sending debug output to t
 noto-sans-mono-bitmap = "0.1.5" # nice bitmap font
 pic8259 = "0.10.2" # interrupt controller
 pc-keyboard = "0.5.1" # keyboard scan code converter
+linked_list_allocator = "0.9.1" # allocator implementation
 
 [dependencies.lazy_static]
 version = "1.4.0"
