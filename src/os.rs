@@ -17,12 +17,7 @@
 
 use bootloader::{boot_info::FrameBuffer, entry_point, BootInfo};
 use core::panic::PanicInfo;
-/*
-use os_core::vga::point_2d::Point2D;
-use os_core::vga::vga_core::{PlainDrawable, ShapeDrawable, TextDrawable};
-use os_core::vga::vga_color, vga_core::Clearable};
-*/
-use os_core::vga::vga_buffer::VGADeviceFactory;
+use os_core::basic_drivers::vga::vga_buffer::VGADeviceFactory;
 
 use os_core::hlt_loop;
 

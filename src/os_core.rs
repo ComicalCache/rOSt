@@ -16,11 +16,11 @@ pub use crate::test_framework::serial;
 
 use core::panic::PanicInfo;
 
+pub mod basic_drivers;
 pub mod interrupts;
 pub mod logger;
 pub mod structures;
 pub mod test_framework;
-pub mod vga;
 
 pub fn init(framebuffer: &'static mut FrameBuffer) {
     logger::init(framebuffer);
