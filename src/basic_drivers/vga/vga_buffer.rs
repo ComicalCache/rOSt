@@ -1,6 +1,7 @@
 use bootloader::boot_info::{FrameBuffer, FrameBufferInfo, PixelFormat};
 
-use crate::{structures::static_stack::StaticStack, vga::vga_core::CHAR_HEIGHT};
+use crate::basic_drivers::vga::vga_core::CHAR_HEIGHT;
+use crate::structures::static_stack::StaticStack;
 
 use super::{
     point_2d::Point2D,

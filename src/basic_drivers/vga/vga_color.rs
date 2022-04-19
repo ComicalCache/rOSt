@@ -49,6 +49,12 @@ pub static CLAY: VGAColor<u8> = VGAColor {
     blue: 11,
     alpha: 255,
 };
+pub static BSOD_BLUE: VGAColor<u8> = VGAColor {
+    red: 9,
+    green: 78,
+    blue: 130,
+    alpha: 255,
+};
 pub static CHARLOTTE: VGAColor<u8> = VGAColor {
     red: 161,
     green: 232,
