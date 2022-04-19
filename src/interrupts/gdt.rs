@@ -1,5 +1,5 @@
 use lazy_static::lazy_static;
-use x86_64::registers::segmentation::{SegmentSelector, SS, DS, ES};
+use x86_64::registers::segmentation::{SegmentSelector, DS, ES, SS};
 use x86_64::structures::gdt::{Descriptor, GlobalDescriptorTable};
 use x86_64::structures::tss::TaskStateSegment;
 use x86_64::VirtAddr;
@@ -53,9 +53,10 @@ lazy_static! {
 struct Selectors {
     code_selector: SegmentSelector,
     data_selector: SegmentSelector,
-    tss_selector: SegmentSelector
+    tss_selector: SegmentSelector,
 }
 
+/// Initialises the GDT and TSS.
 pub fn init_gdt() {
     use x86_64::instructions::segmentation::{Segment, CS};
     use x86_64::instructions::tables::load_tss;

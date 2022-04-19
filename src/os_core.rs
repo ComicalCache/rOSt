@@ -18,10 +18,12 @@ use core::panic::PanicInfo;
 
 pub mod interrupts;
 pub mod logger;
+pub mod memory;
 pub mod structures;
 pub mod test_framework;
 pub mod vga;
 
+/// Initialises the components of the OS, **must** be called before any other functions.
 pub fn init(framebuffer: &'static mut FrameBuffer) {
     logger::init(framebuffer);
     interrupts::init_gdt();
@@ -33,12 +35,14 @@ pub fn init(framebuffer: &'static mut FrameBuffer) {
     x86_64::instructions::interrupts::enable();
 }
 
+/// Endless loop calling halt continuously.
 pub fn hlt_loop() -> ! {
     loop {
         x86_64::instructions::hlt();
     }
 }
 
+/// Function called when a panic while testing occures
 pub fn test_panic_handler(info: &PanicInfo) -> ! {
     serial_println!("{}\n", ansi_colors::Red("[failed]"));
     serial_println!("Error: {}\n", info);

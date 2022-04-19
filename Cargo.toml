@@ -16,6 +16,9 @@ members = [
     "boot",
 ]
 
+[package.metadata.bootloader]
+map-physical-memory = true
+
 [dependencies]
 bootloader = "0.10.12"
 volatile = "0.4.4" # volatile wrapper to prevent aggressive compiler optimizations

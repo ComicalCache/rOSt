@@ -24,7 +24,6 @@ pub fn __print(args: ::core::fmt::Arguments) {
     use core::fmt::Write;
     use x86_64::instructions::interrupts;
 
-    // TODO: find a way to handle this without disabling interrupts since it increases the latency
     interrupts::without_interrupts(|| {
         SERIAL1
             .lock()

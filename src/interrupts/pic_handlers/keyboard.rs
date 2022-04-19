@@ -1,13 +1,11 @@
-use pc_keyboard::{layouts, HandleControl, Keyboard, ScancodeSet1, DecodedKey};
+use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
 use spin::Mutex;
 use x86_64::structures::idt::InterruptStackFrame;
 
 use lazy_static::lazy_static;
 
-use crate::{
-    interrupts::{
-        pic::InterruptIndex, pic_handlers::addresses::PS2_INTERRUPT_CONTROLLER_SCAN_CODE_PORT, PICS,
-    },
+use crate::interrupts::{
+    pic::InterruptIndex, pic_handlers::addresses::PS2_INTERRUPT_CONTROLLER_SCAN_CODE_PORT, PICS,
 };
 
 // ! ignore unused imports for now
@@ -18,6 +16,7 @@ lazy_static! {
     );
 }
 
+/// Handles a keyboard interrupt.
 pub extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStackFrame) {
     use x86_64::instructions::port::Port;
 

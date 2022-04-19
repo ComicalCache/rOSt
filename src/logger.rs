@@ -13,8 +13,11 @@ const LOGGER_START_INDENT_X: u16 = 32;
 const LOGGER_START_INDENT_Y: u16 = 2 * CHAR_HEIGHT as u16;
 
 lazy_static! {
+    /// Global logger instance that prints to the BSOD screen.
     pub static ref LOGGER: Mutex<Option<Logger>> = Mutex::new(Option::None);
 }
+
+/// Initialises the logger.
 pub fn init(framebuffer: &'static mut FrameBuffer) {
     let _ = LOGGER.lock().insert(Logger {
         x: 0,
@@ -25,6 +28,7 @@ pub fn init(framebuffer: &'static mut FrameBuffer) {
     });
 }
 
+/// Logger struct that prints to the BSOD screen.
 pub struct Logger {
     x: u16,
     y: u16,
@@ -42,6 +46,9 @@ impl Logger {
         self.y = y;
     }
 
+    /// Logs a message to the BSOD screen.
+    ///
+    /// If the logger is called the first time it will draw the background and generic error heading text.
     pub fn log(&mut self, text: &str) {
         if !self.took_over {
             self.device.clear(vga_color::CLAY);
@@ -58,6 +65,7 @@ impl Logger {
         self.__log(text);
     }
 
+    /// Logs a message to the BSOD screen and adds a newline.
     pub fn logln(&mut self, text: &str) {
         self.log(text);
         if self.x > 0 {
