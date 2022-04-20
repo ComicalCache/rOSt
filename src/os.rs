@@ -39,9 +39,6 @@ pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
 }
 
 pub fn kernel_main(kernel_info: KernelInformation) {
-    // ? once we have a proper writer (should be instanciated in the os_core::init function) we should outsource
-    // ? the os_core::init call from kernel_main and kernel_test to the general kernel function since it will
-
     let mut device = VGADeviceFactory::from_kernel_info(kernel_info);
     device.clear(vga_color::BLACK);
 

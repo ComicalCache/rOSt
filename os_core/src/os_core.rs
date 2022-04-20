@@ -7,6 +7,7 @@ extern crate alloc;
 
 use core::panic::PanicInfo;
 
+use alloc::vec::Vec;
 use x86_64::VirtAddr;
 
 use crate::memory::page_table::BootInfoFrameAllocator;
@@ -30,8 +31,8 @@ pub mod structures;
 pub mod test_framework;
 
 lazy_static! {
-    static ref REGISTERED_DRIVERS: Mutex<[Option<Registrator>; 256]> = Mutex::new([None; 256]);
-    static ref INITIALIZED_DRIVERS: Mutex<[Option<Driver>; 256]> = Mutex::new([None; 256]);
+    static ref REGISTERED_DRIVERS: Mutex<Vec<Registrator>> = Mutex::new(Vec::new());
+    static ref INITIALIZED_DRIVERS: Mutex<Vec<Driver>> = Mutex::new(Vec::new());
 }
 
 /// Initialises the components of the OS, **must** be called before any other functions.
@@ -62,22 +63,17 @@ pub fn init(boot_info: &'static BootInfo) -> KernelInformation {
 
 pub fn reload_drivers(kernel_info: KernelInformation) {
     let mut initialized_drivers = INITIALIZED_DRIVERS.lock();
-    for (index, driver_generator) in REGISTERED_DRIVERS.lock().iter().enumerate() {
-        if let Some(driver) = driver_generator {
-            initialized_drivers[index] = Some(driver(kernel_info));
-        } else {
-            break;
-        }
-    }
+    initialized_drivers.clear();
+    initialized_drivers.extend(
+        REGISTERED_DRIVERS
+            .lock()
+            .iter()
+            .map(|registrator| registrator(kernel_info)),
+    );
 }
 
 pub fn register_driver(registrator: Registrator) {
-    for driver in REGISTERED_DRIVERS.lock().iter_mut() {
-        if driver.is_none() {
-            driver.replace(registrator);
-            return;
-        }
-    }
+    REGISTERED_DRIVERS.lock().push(registrator);
 }
 
 /// Endless loop calling halt continuously.

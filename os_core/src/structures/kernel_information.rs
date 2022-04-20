@@ -67,16 +67,16 @@ impl KernelInformation {
             boot_info.version_minor,
             boot_info.version_patch,
         ];
-        let framebuffer_option = boot_info.framebuffer.as_ref();
-        match framebuffer_option {
-            Some(framebuffer) => KernelInformation {
+        if let Some(framebuffer) = boot_info.framebuffer.as_ref() {
+            KernelInformation {
                 bootloader_version,
                 framebuffer: Optional::Some(KernelFrameBuffer::new(framebuffer)),
-            },
-            None => KernelInformation {
+            }
+        } else {
+            KernelInformation {
                 bootloader_version,
                 framebuffer: Optional::None,
-            },
+            }
         }
     }
 }
