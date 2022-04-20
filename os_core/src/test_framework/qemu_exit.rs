@@ -1,3 +1,4 @@
+/// Stores the exit codes for the QEMU system.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 #[allow(dead_code)]
@@ -6,6 +7,7 @@ pub enum QemuExitCode {
     Failed = 0x11,
 }
 
+/// Exits the QEMU system with the given exit code.
 #[allow(dead_code)]
 pub fn exit_qemu(exit_code: QemuExitCode) {
     use x86_64::instructions::port::Port;

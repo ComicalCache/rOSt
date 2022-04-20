@@ -1,8 +1,6 @@
 #![feature(ptr_const_cast)]
 use core::fmt;
-use lazy_static::lazy_static;
 use os_core::{logger::Logger, structures::kernel_information::KernelInformation};
-use spin::Mutex;
 use vga_buffer::{VGADevice, VGADeviceFactory};
 use vga_core::{Clearable, TextDrawable, CHAR_HEIGHT};
 
@@ -56,11 +54,11 @@ impl fmt::Write for VGALogger {
 }
 
 pub extern "C" fn driver_init(kernel_info: KernelInformation) {
-    os_core::logger::LOGGER.lock().replace(&mut VGALogger {
+    os_core::logger::LOGGER.lock().replace(Box::new(VGALogger {
         x: 0,
         start_x: 0,
         y: 0,
-        device: VGADeviceFactory::from_buffer(kernel_info),
+        device: VGADeviceFactory::from_kernel_info(kernel_info),
         took_over: false,
-    });
+    }));
 }

@@ -1,9 +1,18 @@
+/// A fixed size stack.
 pub struct StaticStack<T: Sized + Default + Clone + Copy, const C: usize> {
     buffer: [T; C],
     top: usize,
 }
 
+/// The error type for the `StaticStack` struct.
+#[derive(Debug)]
+#[repr(u8)]
+pub enum StaticStackError {
+    EOS,
+}
+
 impl<T: Sized + Default + Clone + Copy, const C: usize> StaticStack<T, C> {
+    /// Creates a new `StaticStack` of capacity `C` and type `T`.
     pub fn new() -> Self {
         Self {
             buffer: [T::default(); C],
@@ -11,15 +20,23 @@ impl<T: Sized + Default + Clone + Copy, const C: usize> StaticStack<T, C> {
         }
     }
 
-    pub fn push(&mut self, item: &T) -> Result<(), &str> {
+    /// Pushes a value onto the stack.
+    ///
+    /// ## Returns
+    /// Returns `Ok(())` if the operation was successful, and `Err(StaticStackError::EOS)` if the stack is full.
+    pub fn push(&mut self, item: &T) -> Result<(), StaticStackError> {
         if self.top == C {
-            return Err("Static stack is full");
+            return Err(StaticStackError::EOS);
         }
         self.buffer[self.top] = item.clone();
         self.top += 1;
         Ok(())
     }
 
+    /// Pops a value off the stack.
+    ///
+    /// ## Returns
+    /// Returns `Some(T)` if the operation was successful, and `None` if the stack is empty.
     pub fn pop(&mut self) -> Option<T> {
         if self.top == 0 {
             return None;
@@ -28,6 +45,7 @@ impl<T: Sized + Default + Clone + Copy, const C: usize> StaticStack<T, C> {
         Some(self.buffer[self.top])
     }
 
+    /// Returns the number of elements in the stack.
     pub fn length(&self) -> usize {
         self.top
     }

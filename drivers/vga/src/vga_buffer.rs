@@ -1,4 +1,5 @@
 use bootloader::boot_info::PixelFormat;
+use noto_sans_mono_bitmap::{get_bitmap, BitmapChar};
 use os_core::structures::{kernel_information::KernelInformation, static_stack::StaticStack};
 
 use crate::vga_core::{CHAR_HEIGHT, INVALID_CHAR};
@@ -8,7 +9,6 @@ use super::{
     vga_color::VGAColor,
     vga_core::{Clearable, PlainDrawable, ShapeDrawable, TextDrawable, CHAR_WEIGHT, CHAR_WIDTH},
 };
-use noto_sans_mono_bitmap::{get_bitmap, BitmapChar};
 
 pub struct VGADevice<'a> {
     width: usize,
@@ -281,8 +281,9 @@ impl VGADevice<'_> {
 }
 
 pub struct VGADeviceFactory;
+
 impl VGADeviceFactory {
-    pub fn from_buffer(kernel_info: KernelInformation) -> VGADevice<'static> {
+    pub fn from_kernel_info(kernel_info: KernelInformation) -> VGADevice<'static> {
         let buffer = kernel_info.framebuffer.unwrap();
         VGADevice {
             width: buffer.width,

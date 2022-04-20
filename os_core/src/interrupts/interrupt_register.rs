@@ -15,7 +15,9 @@ lazy_static! {
     static ref IDT: InterruptDescriptorTable = {
         let mut idt = InterruptDescriptorTable::new();
 
-        // sets all the interrupt handlers for the appropriate CPU interrupts
+        // ##################
+        // # CPU interrupts #
+        // ##################
         idt.breakpoint.set_handler_fn(breakpoint_handler);
 
         unsafe {
@@ -27,7 +29,9 @@ lazy_static! {
 
         idt.page_fault.set_handler_fn(page_fault_handler);
 
-        // sets all the interrupt handlers for the appropriate PIC interrupts
+        // ##################
+        // # PIC interrupts #
+        // ##################
         idt[InterruptIndex::Timer.as_usize()]
             .set_handler_fn(timer_interrupt_handler);
         idt[InterruptIndex::Keyboard.as_usize()]
@@ -43,6 +47,7 @@ lazy_static! {
     };
 }
 
+/// Loads the IDT.
 pub fn init_idt() {
     IDT.load();
 }

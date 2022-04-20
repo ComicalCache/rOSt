@@ -4,12 +4,14 @@ use bootloader::{
 };
 
 #[derive(Clone, Copy)]
+#[repr(C)]
 pub struct KernelInformation {
     pub bootloader_version: [u16; 3],
     pub framebuffer: Option<KernelFrameBuffer>,
 }
 
 #[derive(Clone, Copy)]
+#[repr(C)]
 pub struct KernelFrameBuffer {
     pub width: usize,
     pub height: usize,
@@ -20,7 +22,7 @@ pub struct KernelFrameBuffer {
 }
 
 impl KernelFrameBuffer {
-    pub(crate) fn new(mut buffer: FrameBuffer) -> KernelFrameBuffer {
+    pub(crate) fn new(buffer: &FrameBuffer) -> KernelFrameBuffer {
         let info = buffer.info();
         KernelFrameBuffer {
             width: info.horizontal_resolution,
@@ -28,19 +30,19 @@ impl KernelFrameBuffer {
             format: info.pixel_format,
             bytes_per_pixel: info.bytes_per_pixel,
             stride: info.stride,
-            buffer: buffer.buffer_mut(),
+            buffer: buffer.buffer(),
         }
     }
 }
 
 impl KernelInformation {
-    pub(crate) fn new(boot_info: BootInfo) -> KernelInformation {
+    pub(crate) fn new(boot_info: &'static BootInfo) -> KernelInformation {
         let bootloader_version = [
             boot_info.version_major,
             boot_info.version_minor,
             boot_info.version_patch,
         ];
-        let framebuffer_option = boot_info.framebuffer.into_option();
+        let framebuffer_option = boot_info.framebuffer.as_ref();
         match framebuffer_option {
             Some(framebuffer) => KernelInformation {
                 bootloader_version,

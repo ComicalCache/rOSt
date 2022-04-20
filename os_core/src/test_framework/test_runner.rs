@@ -6,6 +6,7 @@ use crate::{
 use super::testable::Testable;
 use crate::test_framework::ansi_colors::Yellow;
 
+/// Rusts test runner function that is called to run all annotated tests.
 #[allow(dead_code)]
 pub fn test_runner(tests: &[&dyn Testable]) {
     let test_count = tests.len();

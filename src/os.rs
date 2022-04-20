@@ -5,7 +5,8 @@
     custom_test_frameworks,
     abi_x86_interrupt,
     generic_const_exprs,
-    core_intrinsics
+    core_intrinsics,
+    alloc_error_handler
 )]
 #![test_runner(os_core::test_framework::test_runner)]
 #![reexport_test_harness_main = "test_main"]
@@ -13,13 +14,21 @@
 use ata::constants::{PRIMARY_ATA_BUS, SECONDARY_ATA_BUS};
 use bootloader::{boot_info::FrameBuffer, entry_point, BootInfo};
 use core::panic::PanicInfo;
-use os_core::structures::kernel_information::KernelInformation;
+use os_core::{log_print, structures::kernel_information::KernelInformation};
+use vga::{vga_buffer::VGADeviceFactory, vga_color, vga_core::Clearable};
+extern crate alloc;
+
+use alloc::boxed::Box;
+use core::alloc::Layout;
+
+use os_core::log_println;
 
 entry_point!(kernel);
 pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
+    let kernel_info = os_core::init(boot_info);
     os_core::register_driver(vga::driver_init);
     os_core::register_driver(ata::driver_init);
-    let kernel_info = os_core::init(boot_info);
+    os_core::reload_drivers(kernel_info);
 
     #[cfg(test)]
     kernel_test(kernel_info);
@@ -32,9 +41,8 @@ pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
 pub fn kernel_main(kernel_info: KernelInformation) {
     // ? once we have a proper writer (should be instanciated in the os_core::init function) we should outsource
     // ? the os_core::init call from kernel_main and kernel_test to the general kernel function since it will
-    let framebuffer_pointer: *mut FrameBuffer = boot_info.framebuffer.as_mut().unwrap();
 
-    let mut device = VGADeviceFactory::from_buffer(usable_framebuffer);
+    let mut device = VGADeviceFactory::from_kernel_info(kernel_info);
     device.clear(vga_color::BLACK);
 
     let disk_tests = [
@@ -93,25 +101,12 @@ pub fn kernel_main(kernel_info: KernelInformation) {
         }
     }
 
-    device.draw_string(350, 300, vga_color::WHITE, "Hello, world!", 0);
-    device.fill_rectangle(350, 350, 50, 70, vga_color::GREEN);
-    device.draw_rectangle(300, 250, 250, 200, vga_color::RED);
-    device.draw_bezier(
-        Point2D { x: 300, y: 250 },
-        Point2D { x: 550, y: 250 },
-        Point2D { x: 550, y: 450 },
-        Point2D { x: 300, y: 450 },
-        vga_color::WHITE,
-    );
-
-    // this causes a panic and the OS will handle it
-    /*
-    unsafe {
-        *(0xdeadbeef as *mut u64) = 42;
-    };
-    */
+    let test = Box::new(4);
+    log_println!("New boxed value: {:#?}", test);
+    log_println!("im not dying :)");
 }
 
+/// Panic handler for the OS.
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
@@ -119,14 +114,21 @@ fn panic(info: &PanicInfo) -> ! {
     hlt_loop();
 }
 
+/// This is the main function for tests.
 #[cfg(test)]
 pub fn kernel_test(kernel_info: KernelInformation) {
     test_main();
 }
 
+/// Panic handler for the OS in test mode.
 #[cfg(test)]
 #[panic_handler]
 // this function is called if a panic occurs and it is a test, all output is redirected to the serial port
 fn panic(info: &PanicInfo) -> ! {
     os_core::test_panic_handler(info);
+}
+
+#[alloc_error_handler]
+fn alloc_error_handler(layout: Layout) -> ! {
+    panic!("allocation error: {:?}", layout)
 }
