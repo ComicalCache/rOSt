@@ -3,6 +3,15 @@
 version = 3
 
 [[package]]
+name = "ata"
+version = "0.1.0"
+dependencies = [
+ "os_core",
+ "spin 0.9.3",
+ "x86_64",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -61,9 +70,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.123"
+version = "0.2.124"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb691a747a7ab48abc15c5b42066eaafde10dc427e3b6ee2a1cf43db04c763bd"
+checksum = "21a41fed9d98f27ab1c6d161da622a4fa35e8a54a8adc24bbf3ddd0ef70b0e50"
 
 [[package]]
 name = "linked_list_allocator"
@@ -103,15 +112,27 @@ checksum = "643bee6617a18c64f5a72ef358a9426d3682dc768db7c320825d3d936e2232d4"
 name = "os"
 version = "0.1.0"
 dependencies = [
+ "ata",
+ "bootloader",
+ "lazy_static",
+ "os_core",
+ "spin 0.9.3",
+ "vga",
+ "volatile",
+ "x86_64",
+]
+
+[[package]]
+name = "os_core"
+version = "0.1.0"
+dependencies = [
  "bootloader",
  "lazy_static",
  "linked_list_allocator",
- "noto-sans-mono-bitmap",
  "pc-keyboard",
  "pic8259",
- "spin 0.9.2",
+ "spin 0.9.3",
  "uart_16550",
- "volatile",
  "x86_64",
 ]
 
@@ -178,9 +199,9 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "spin"
-version = "0.9.2"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "511254be0c5bcf062b019a6c89c01a664aa359ded62f78aa72c6fc137c0590e5"
+checksum = "c530c2b0d0bf8b69304b39fe2001993e267461948b890cd037d8ad4293fa1a0d"
 dependencies = [
  "lock_api",
 ]
@@ -227,11 +248,12 @@ dependencies = [
 
 [[package]]
 name = "uart_16550"
-version = "0.2.17"
+version = "0.2.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3616395dbb38a9c39a5865b5691c21d9f8369ba876355cfef8ce39d0d4cf3281"
+checksum = "b074eb9300ad949edd74c529c0e8d451625af71bb948e6b65fe69f72dc1363d9"
 dependencies = [
  "bitflags",
+ "rustversion",
  "x86_64",
 ]
 
@@ -240,6 +262,16 @@ name = "unicode-xid"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
+
+[[package]]
+name = "vga"
+version = "0.1.0"
+dependencies = [
+ "lazy_static",
+ "noto-sans-mono-bitmap",
+ "os_core",
+ "spin 0.9.3",
+]
 
 [[package]]
 name = "volatile"

@@ -1,0 +1,13 @@
+[package]
+name = "ata"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "ata"
+path = "src/ata.rs"
+
+[dependencies]
+os_core = { path = "../../os_core" }
+x86_64 = "0.14.9" # configures the serial port, cpu exception table
+spin = "0.9.2" # spinlock implementation
