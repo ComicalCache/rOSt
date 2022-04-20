@@ -9,37 +9,30 @@
 )]
 #![test_runner(os_core::test_framework::test_runner)]
 #![reexport_test_harness_main = "test_main"]
-// no entry point
 
-// #################################################
-// #   This produces a runnable binary of the OS   #
-// #################################################
-
+use ata::constants::{PRIMARY_ATA_BUS, SECONDARY_ATA_BUS};
 use bootloader::{boot_info::FrameBuffer, entry_point, BootInfo};
 use core::panic::PanicInfo;
-use os_core::basic_drivers::ata::constants::{PRIMARY_ATA_BUS, SECONDARY_ATA_BUS};
-use os_core::basic_drivers::vga::point_2d::Point2D;
-use os_core::basic_drivers::vga::vga_core::{PlainDrawable, ShapeDrawable, TextDrawable};
-use os_core::basic_drivers::vga::{vga_buffer::VGADeviceFactory, vga_color, vga_core::Clearable};
-
-use os_core::{hlt_loop, log_print, log_println};
+use os_core::structures::kernel_information::KernelInformation;
 
 entry_point!(kernel);
 pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
+    os_core::register_driver(vga::driver_init);
+    os_core::register_driver(ata::driver_init);
+    let kernel_info = os_core::init(boot_info);
+
     #[cfg(test)]
-    kernel_test(boot_info);
+    kernel_test(kernel_info);
     #[cfg(not(test))]
-    kernel_main(boot_info);
-    hlt_loop();
+    os_core::kernel_main(kernel_info);
+
+    os_core::hlt_loop();
 }
 
-pub fn kernel_main(boot_info: &'static mut BootInfo) {
+pub fn kernel_main(kernel_info: KernelInformation) {
     // ? once we have a proper writer (should be instanciated in the os_core::init function) we should outsource
     // ? the os_core::init call from kernel_main and kernel_test to the general kernel function since it will
     let framebuffer_pointer: *mut FrameBuffer = boot_info.framebuffer.as_mut().unwrap();
-    let os_framebuffer = unsafe { framebuffer_pointer.as_mut().unwrap() };
-    os_core::init(os_framebuffer);
-    let usable_framebuffer = unsafe { framebuffer_pointer.as_mut().unwrap() };
 
     let mut device = VGADeviceFactory::from_buffer(usable_framebuffer);
     device.clear(vga_color::BLACK);
@@ -127,8 +120,7 @@ fn panic(info: &PanicInfo) -> ! {
 }
 
 #[cfg(test)]
-pub fn kernel_test(boot_info: &'static mut BootInfo) {
-    os_core::init(boot_info.framebuffer.as_mut().unwrap());
+pub fn kernel_test(kernel_info: KernelInformation) {
     test_main();
 }
 

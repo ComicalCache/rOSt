@@ -1,9 +1,8 @@
+use os_core::structures::port_extensions::PortExtRead;
 use x86_64::instructions::{
     interrupts::without_interrupts,
     port::{Port, PortReadOnly, PortWriteOnly},
 };
-
-use crate::structures::port_extensions::PortExtRead;
 
 use super::{
     constants::{error_register_flags, status_register_flags, ATAIdentifyError},

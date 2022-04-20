@@ -1,28 +1,28 @@
-use bootloader::boot_info::{FrameBuffer, FrameBufferInfo, PixelFormat};
+use bootloader::boot_info::PixelFormat;
+use os_core::structures::{kernel_information::KernelInformation, static_stack::StaticStack};
 
-use crate::basic_drivers::vga::vga_core::CHAR_HEIGHT;
-use crate::structures::static_stack::StaticStack;
+use crate::vga_core::{CHAR_HEIGHT, INVALID_CHAR};
 
 use super::{
     point_2d::Point2D,
     vga_color::VGAColor,
-    vga_core::{
-        Clearable, PlainDrawable, ShapeDrawable, TextDrawable, CHAR_WEIGHT, CHAR_WIDTH,
-        INVALID_CHAR,
-    },
+    vga_core::{Clearable, PlainDrawable, ShapeDrawable, TextDrawable, CHAR_WEIGHT, CHAR_WIDTH},
 };
 use noto_sans_mono_bitmap::{get_bitmap, BitmapChar};
 
 pub struct VGADevice<'a> {
+    width: usize,
+    height: usize,
+    pixel_format: PixelFormat,
     frame_pointer: &'a mut [u8],
-    frame_buffer_info: FrameBufferInfo,
     bytes_per_row: usize,
+    bytes_per_pixel: usize,
 }
 
 impl Clearable for VGADevice<'_> {
     fn clear(&mut self, color: VGAColor<u8>) {
-        for x in 0..self.frame_buffer_info.horizontal_resolution {
-            for y in 0..self.frame_buffer_info.vertical_resolution {
+        for x in 0..self.width {
+            for y in 0..self.height {
                 self.draw_point(x as u16, y as u16, color);
             }
         }
@@ -33,8 +33,8 @@ impl PlainDrawable for VGADevice<'_> {
     fn draw_point(&mut self, x: u16, y: u16, color: VGAColor<u8>) {
         let x = x as usize;
         let y = y as usize;
-        let index = y * self.bytes_per_row + x * self.frame_buffer_info.bytes_per_pixel;
-        match self.frame_buffer_info.pixel_format {
+        let index = y * self.bytes_per_row + x * self.bytes_per_pixel;
+        match self.pixel_format {
             PixelFormat::RGB => {
                 let frame_color = VGAColor {
                     red: self.frame_pointer[index + 0],
@@ -66,10 +66,7 @@ impl PlainDrawable for VGADevice<'_> {
                 let alpha1 = 255 - alpha;
                 self.frame_pointer[index] = ((gray * alpha1 + color_gray * alpha) / 255) as u8;
             }
-            _ => todo!(
-                "Unsupported pixel format: {:?}",
-                self.frame_buffer_info.pixel_format
-            ),
+            _ => todo!("Unsupported pixel format: {:?}", self.pixel_format),
         }
     }
     fn draw_point_p(&mut self, p: Point2D<u16>, color: VGAColor<u8>) {
@@ -232,7 +229,7 @@ impl TextDrawable for VGADevice<'_> {
                     pos_y += CHAR_HEIGHT as u16;
                 }
                 _ => {
-                    if pos_x + CHAR_WIDTH > self.frame_buffer_info.horizontal_resolution as u16 {
+                    if pos_x + CHAR_WIDTH > self.width as u16 {
                         pos_x = reset_x;
                         pos_y += CHAR_HEIGHT as u16;
                     }
@@ -262,7 +259,7 @@ impl TextDrawable for VGADevice<'_> {
                 }
                 _ => {
                     pos_x += CHAR_WIDTH;
-                    if pos_x > self.frame_buffer_info.horizontal_resolution as u16 {
+                    if pos_x > self.width as u16 {
                         pos_x = reset_x;
                         pos_y += CHAR_HEIGHT as u16;
                     }
@@ -285,12 +282,15 @@ impl VGADevice<'_> {
 
 pub struct VGADeviceFactory;
 impl VGADeviceFactory {
-    pub fn from_buffer(frame_buffer: &mut FrameBuffer) -> VGADevice {
-        let info = frame_buffer.info();
+    pub fn from_buffer(kernel_info: KernelInformation) -> VGADevice<'static> {
+        let buffer = kernel_info.framebuffer.unwrap();
         VGADevice {
-            frame_buffer_info: info,
-            bytes_per_row: info.bytes_per_pixel * info.stride,
-            frame_pointer: frame_buffer.buffer_mut(),
+            width: buffer.width,
+            height: buffer.height,
+            pixel_format: buffer.format,
+            bytes_per_row: buffer.bytes_per_pixel * buffer.stride,
+            bytes_per_pixel: buffer.bytes_per_pixel,
+            frame_pointer: unsafe { buffer.buffer.as_mut().as_mut().unwrap() },
         }
     }
 }

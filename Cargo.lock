@@ -3,6 +3,15 @@
 version = 3
 
 [[package]]
+name = "ata"
+version = "0.1.0"
+dependencies = [
+ "os_core",
+ "spin 0.9.2",
+ "x86_64",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -94,14 +103,23 @@ checksum = "643bee6617a18c64f5a72ef358a9426d3682dc768db7c320825d3d936e2232d4"
 name = "os"
 version = "0.1.0"
 dependencies = [
+ "ata",
  "bootloader",
  "lazy_static",
- "noto-sans-mono-bitmap",
+ "os_core",
+ "vga",
+]
+
+[[package]]
+name = "os_core"
+version = "0.1.0"
+dependencies = [
+ "bootloader",
+ "lazy_static",
  "pc-keyboard",
  "pic8259",
  "spin 0.9.2",
  "uart_16550",
- "volatile",
  "x86_64",
 ]
 
@@ -221,6 +239,17 @@ name = "unicode-xid"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
+
+[[package]]
+name = "vga"
+version = "0.1.0"
+dependencies = [
+ "bootloader",
+ "lazy_static",
+ "noto-sans-mono-bitmap",
+ "os_core",
+ "spin 0.9.2",
+]
 
 [[package]]
 name = "volatile"
