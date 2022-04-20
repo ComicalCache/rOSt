@@ -1,5 +1,5 @@
 use bootloader::{
-    boot_info::{FrameBuffer, PixelFormat},
+    boot_info::{FrameBuffer, Optional},
     BootInfo,
 };
 
@@ -7,7 +7,7 @@ use bootloader::{
 #[repr(C)]
 pub struct KernelInformation {
     pub bootloader_version: [u16; 3],
-    pub framebuffer: Option<KernelFrameBuffer>,
+    pub framebuffer: Optional<KernelFrameBuffer>,
 }
 
 #[derive(Clone, Copy)]
@@ -18,7 +18,27 @@ pub struct KernelFrameBuffer {
     pub format: PixelFormat,
     pub bytes_per_pixel: usize,
     pub stride: usize,
-    pub buffer: *const [u8],
+    pub buffer: *mut u8,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(C)]
+pub enum PixelFormat {
+    /// One byte red, then one byte green, then one byte blue.
+    ///
+    /// Length might be larger than 3, check [`bytes_per_pixel`][FrameBufferInfo::bytes_per_pixel]
+    /// for this.
+    RGB,
+    /// One byte blue, then one byte green, then one byte red.
+    ///
+    /// Length might be larger than 3, check [`bytes_per_pixel`][FrameBufferInfo::bytes_per_pixel]
+    /// for this.
+    BGR,
+    /// A single byte, representing the grayscale value.
+    ///
+    /// Length might be larger than 1, check [`bytes_per_pixel`][FrameBufferInfo::bytes_per_pixel]
+    /// for this.
+    U8,
 }
 
 impl KernelFrameBuffer {
@@ -27,10 +47,15 @@ impl KernelFrameBuffer {
         KernelFrameBuffer {
             width: info.horizontal_resolution,
             height: info.vertical_resolution,
-            format: info.pixel_format,
+            format: match info.pixel_format {
+                bootloader::boot_info::PixelFormat::RGB => PixelFormat::RGB,
+                bootloader::boot_info::PixelFormat::BGR => PixelFormat::BGR,
+                bootloader::boot_info::PixelFormat::U8 => PixelFormat::U8,
+                _ => panic!("Unsupported pixel format: {:?}", info.pixel_format),
+            },
             bytes_per_pixel: info.bytes_per_pixel,
             stride: info.stride,
-            buffer: buffer.buffer(),
+            buffer: buffer.buffer().as_ptr() as *mut u8,
         }
     }
 }
@@ -46,11 +71,11 @@ impl KernelInformation {
         match framebuffer_option {
             Some(framebuffer) => KernelInformation {
                 bootloader_version,
-                framebuffer: Some(KernelFrameBuffer::new(framebuffer)),
+                framebuffer: Optional::Some(KernelFrameBuffer::new(framebuffer)),
             },
             None => KernelInformation {
                 bootloader_version,
-                framebuffer: None,
+                framebuffer: Optional::None,
             },
         }
     }

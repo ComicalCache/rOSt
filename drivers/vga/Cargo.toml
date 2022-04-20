@@ -11,7 +11,6 @@ path = "src/vga.rs"
 os_core = { path = "../../os_core" }
 noto-sans-mono-bitmap = "0.1.5" # nice bitmap font
 spin = "0.9.2" # spinlock implementation
-bootloader = "0.10.12"
 
 [dependencies.lazy_static]
 version = "1.4.0"

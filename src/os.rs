@@ -12,7 +12,7 @@
 #![reexport_test_harness_main = "test_main"]
 
 use ata::constants::{PRIMARY_ATA_BUS, SECONDARY_ATA_BUS};
-use bootloader::{boot_info::FrameBuffer, entry_point, BootInfo};
+use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 use os_core::{log_print, structures::kernel_information::KernelInformation};
 use vga::{vga_buffer::VGADeviceFactory, vga_color, vga_core::Clearable};
@@ -33,7 +33,7 @@ pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
     #[cfg(test)]
     kernel_test(kernel_info);
     #[cfg(not(test))]
-    os_core::kernel_main(kernel_info);
+    kernel_main(kernel_info);
 
     os_core::hlt_loop();
 }
@@ -111,7 +111,7 @@ pub fn kernel_main(kernel_info: KernelInformation) {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     os_core::log_print!("{}", info);
-    hlt_loop();
+    os_core::hlt_loop();
 }
 
 /// This is the main function for tests.

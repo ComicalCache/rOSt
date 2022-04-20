@@ -1,6 +1,9 @@
-use bootloader::boot_info::PixelFormat;
+use alloc::slice;
 use noto_sans_mono_bitmap::{get_bitmap, BitmapChar};
-use os_core::structures::{kernel_information::KernelInformation, static_stack::StaticStack};
+use os_core::structures::{
+    kernel_information::{KernelInformation, PixelFormat},
+    static_stack::StaticStack,
+};
 
 use crate::vga_core::{CHAR_HEIGHT, INVALID_CHAR};
 
@@ -10,16 +13,16 @@ use super::{
     vga_core::{Clearable, PlainDrawable, ShapeDrawable, TextDrawable, CHAR_WEIGHT, CHAR_WIDTH},
 };
 
-pub struct VGADevice<'a> {
+pub struct VGADevice {
     width: usize,
     height: usize,
     pixel_format: PixelFormat,
-    frame_pointer: &'a mut [u8],
+    frame_pointer: &'static mut [u8],
     bytes_per_row: usize,
     bytes_per_pixel: usize,
 }
 
-impl Clearable for VGADevice<'_> {
+impl Clearable for VGADevice {
     fn clear(&mut self, color: VGAColor<u8>) {
         for x in 0..self.width {
             for y in 0..self.height {
@@ -29,7 +32,7 @@ impl Clearable for VGADevice<'_> {
     }
 }
 
-impl PlainDrawable for VGADevice<'_> {
+impl PlainDrawable for VGADevice {
     fn draw_point(&mut self, x: u16, y: u16, color: VGAColor<u8>) {
         let x = x as usize;
         let y = y as usize;
@@ -66,7 +69,6 @@ impl PlainDrawable for VGADevice<'_> {
                 let alpha1 = 255 - alpha;
                 self.frame_pointer[index] = ((gray * alpha1 + color_gray * alpha) / 255) as u8;
             }
-            _ => todo!("Unsupported pixel format: {:?}", self.pixel_format),
         }
     }
     fn draw_point_p(&mut self, p: Point2D<u16>, color: VGAColor<u8>) {
@@ -188,7 +190,7 @@ fn bezier_point(
     (((_p1 * t_1 + _p2 * t) * t_1 + _p3 * t2) * t_1 + _p4 * t3).into()
 }
 
-impl ShapeDrawable for VGADevice<'_> {
+impl ShapeDrawable for VGADevice {
     fn draw_rectangle(&mut self, x: u16, y: u16, width: u16, height: u16, color: VGAColor<u8>) {
         self.draw_line(x, y, x + width, y, color);
         self.draw_line(x, y + height, x + width, y + height, color);
@@ -211,7 +213,7 @@ impl ShapeDrawable for VGADevice<'_> {
     }
 }
 
-impl TextDrawable for VGADevice<'_> {
+impl TextDrawable for VGADevice {
     fn draw_string(
         &mut self,
         x: u16,
@@ -270,7 +272,7 @@ impl TextDrawable for VGADevice<'_> {
     }
 }
 
-impl VGADevice<'_> {
+impl VGADevice {
     fn draw_char(&mut self, x: u16, y: u16, char: &BitmapChar, color: VGAColor<u8>) {
         for (iy, row) in char.bitmap().iter().enumerate() {
             for (ix, byte) in row.iter().enumerate() {
@@ -283,15 +285,20 @@ impl VGADevice<'_> {
 pub struct VGADeviceFactory;
 
 impl VGADeviceFactory {
-    pub fn from_kernel_info(kernel_info: KernelInformation) -> VGADevice<'static> {
-        let buffer = kernel_info.framebuffer.unwrap();
+    pub fn from_kernel_info(kernel_info: KernelInformation) -> VGADevice {
+        let buffer = kernel_info.framebuffer.as_ref().unwrap();
         VGADevice {
             width: buffer.width,
             height: buffer.height,
             pixel_format: buffer.format,
             bytes_per_row: buffer.bytes_per_pixel * buffer.stride,
             bytes_per_pixel: buffer.bytes_per_pixel,
-            frame_pointer: unsafe { buffer.buffer.as_mut().as_mut().unwrap() },
+            frame_pointer: unsafe {
+                slice::from_raw_parts_mut::<u8>(
+                    buffer.buffer,
+                    buffer.bytes_per_pixel * buffer.stride * buffer.height,
+                )
+            },
         }
     }
 }

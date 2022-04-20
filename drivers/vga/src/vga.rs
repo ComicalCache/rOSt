@@ -1,8 +1,15 @@
+#![no_std] // no standard library
+#![no_main]
 #![feature(ptr_const_cast)]
+use alloc::boxed::Box;
 use core::fmt;
-use os_core::{logger::Logger, structures::kernel_information::KernelInformation};
+use os_core::{
+    logger::Logger,
+    structures::{driver::Driver, kernel_information::KernelInformation},
+};
 use vga_buffer::{VGADevice, VGADeviceFactory};
 use vga_core::{Clearable, TextDrawable, CHAR_HEIGHT};
+extern crate alloc;
 
 pub mod point_2d;
 pub mod vga_buffer;
@@ -13,7 +20,7 @@ struct VGALogger {
     x: u16,
     y: u16,
     start_x: u16,
-    device: VGADevice<'static>,
+    device: VGADevice,
     took_over: bool,
 }
 
@@ -53,7 +60,7 @@ impl fmt::Write for VGALogger {
     }
 }
 
-pub extern "C" fn driver_init(kernel_info: KernelInformation) {
+pub extern "C" fn driver_init(kernel_info: KernelInformation) -> Driver {
     os_core::logger::LOGGER.lock().replace(Box::new(VGALogger {
         x: 0,
         start_x: 0,
@@ -61,4 +68,10 @@ pub extern "C" fn driver_init(kernel_info: KernelInformation) {
         device: VGADeviceFactory::from_kernel_info(kernel_info),
         took_over: false,
     }));
+    Driver {
+        serial: [
+            0xf2, 0xf3, 0xf4, 0xf5, 0xf2, 0xf3, 0xf4, 0xf5, 0xf2, 0xf3, 0xf4, 0xf5, 0xf2, 0xf3,
+            0xf4, 0xf5,
+        ],
+    }
 }

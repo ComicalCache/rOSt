@@ -3,7 +3,7 @@ use core::fmt::{self, Write};
 use lazy_static::lazy_static;
 use spin::Mutex;
 
-pub trait Logger: Write + Send + Sync {
+pub trait Logger: Write + Send {
     fn log(&mut self, message: &str);
     fn logln(&mut self, message: &str);
 }

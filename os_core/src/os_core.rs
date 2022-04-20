@@ -1,4 +1,5 @@
-#![no_std]
+#![no_std] // no standard library
+#![no_main]
 #![allow(incomplete_features)]
 #![feature(abi_x86_interrupt, generic_const_exprs, core_intrinsics)]
 
