@@ -16,7 +16,7 @@ fn panic(info: &PanicInfo) -> ! {
 entry_point!(kernel_start);
 #[no_mangle]
 pub fn kernel_start(_boot_info: &'static mut BootInfo) -> ! {
-    kernel::init(_boot_info.framebuffer.as_mut().take().unwrap());
+    kernel::init(_boot_info);
     test_main();
     loop {}
 }

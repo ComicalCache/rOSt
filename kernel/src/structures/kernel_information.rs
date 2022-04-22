@@ -2,12 +2,14 @@ use bootloader::{
     boot_info::{FrameBuffer, Optional},
     BootInfo,
 };
+use bootloader::boot_info::MemoryRegions;
 
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct KernelInformation {
     pub bootloader_version: [u16; 3],
     pub framebuffer: Optional<KernelFrameBuffer>,
+    pub memory_regions: &'static MemoryRegions
 }
 
 #[derive(Clone, Copy)]
@@ -67,16 +69,15 @@ impl KernelInformation {
             boot_info.version_minor,
             boot_info.version_patch,
         ];
-        if let Some(framebuffer) = boot_info.framebuffer.as_ref() {
-            KernelInformation {
-                bootloader_version,
-                framebuffer: Optional::Some(KernelFrameBuffer::new(framebuffer)),
-            }
-        } else {
-            KernelInformation {
-                bootloader_version,
-                framebuffer: Optional::None,
-            }
+        let framebuffer = match boot_info.framebuffer.as_ref() {
+            Some(framebuffer) => Optional::Some(KernelFrameBuffer::new(framebuffer)),
+            None => Optional::None
+        };
+
+        KernelInformation {
+            bootloader_version,
+            framebuffer,
+            memory_regions: &boot_info.memory_regions
         }
     }
 }

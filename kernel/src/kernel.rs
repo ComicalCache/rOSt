@@ -5,26 +5,26 @@
 
 extern crate alloc;
 
+use alloc::vec::Vec;
 use core::panic::PanicInfo;
 
-use alloc::vec::Vec;
-use x86_64::VirtAddr;
-
-use crate::memory::page_table::BootInfoFrameAllocator;
-use crate::structures::driver::Driver;
 use bootloader::BootInfo;
 use lazy_static::lazy_static;
 use spin::Mutex;
+use x86_64::VirtAddr;
+
 use structures::driver::Registrator;
 use structures::kernel_information::KernelInformation;
 
-pub mod memory;
 pub use crate::interrupts::gdt;
+use crate::memory::page_table::{BootInfoFrameAllocator, MEMORY_MAPPER};
+use crate::structures::driver::Driver;
 pub use crate::test_framework::ansi_colors;
 use crate::test_framework::qemu_exit::exit_qemu;
 use crate::test_framework::qemu_exit::QemuExitCode;
 pub use crate::test_framework::serial;
 
+pub mod memory;
 pub mod interrupts;
 pub mod logger;
 pub mod structures;
@@ -46,7 +46,7 @@ pub fn init(boot_info: &'static BootInfo) -> KernelInformation {
     }
     x86_64::instructions::interrupts::enable();
 
-    let mut mapper = unsafe {
+    unsafe {
         memory::page_table::init(VirtAddr::new(
             boot_info
                 .physical_memory_offset
@@ -54,9 +54,10 @@ pub fn init(boot_info: &'static BootInfo) -> KernelInformation {
                 .expect("physical memory mapping not set"),
         ))
     };
-    let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_regions) };
 
-    memory::heap::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
+    let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_regions) };
+    let mut mapper = MEMORY_MAPPER.lock();
+    memory::heap::init_heap(mapper.as_mut().unwrap(), &mut frame_allocator).expect("heap initialization failed");
 
     kernel_info
 }
