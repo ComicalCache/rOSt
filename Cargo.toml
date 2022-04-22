@@ -10,7 +10,7 @@ path = "src/os.rs"
 [workspace]
 members = [
     "boot",
-    "os_core",
+    "kernel",
     "drivers/ata",
     "drivers/vga"
 ]
@@ -19,7 +19,7 @@ members = [
 map-physical-memory = true
 
 [dependencies]
-os_core = { path = "os_core" }
+kernel = { path = "kernel" }
 vga = { path = "drivers/vga" }
 ata = { path = "drivers/ata" }
 bootloader = "0.10.12"

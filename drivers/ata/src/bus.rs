@@ -1,8 +1,11 @@
-use os_core::structures::port_extensions::PortExtRead;
+use alloc::vec::Vec;
+use kernel::structures::port_extensions::{PortExtRead, PortExtWrite};
 use x86_64::instructions::{
     interrupts::without_interrupts,
     port::{Port, PortReadOnly, PortWriteOnly},
 };
+
+use crate::{constants::ATACommands, partition::Partition};
 
 use super::{
     constants::{error_register_flags, status_register_flags, ATAIdentifyError},
@@ -101,38 +104,94 @@ impl ATABus {
             if !self.connected() {
                 return Err(ATAIdentifyError::BusNotConnected);
             }
-            self.wait_for(status_register_flags::BSY, false).unwrap();
+            if let Err(_) = self.wait_for(status_register_flags::BSY, false) {
+                return Err(ATAIdentifyError::Unknown);
+            }
             without_interrupts(|| {
                 self.drive_head_register_rw
                     .write(if master { 0xA0 } else { 0xB0 });
                 self.device_control_register_w.write(0x00);
-                self.wait_400ns().unwrap();
+                if let Err(_) = self.wait_400ns() {
+                    return Err(ATAIdentifyError::Unknown);
+                }
                 self.sector_count_register_rw.write(0x00);
                 self.lba_low_register_rw.write(0x00);
                 self.lba_mid_register_rw.write(0x00);
                 self.lba_high_register_rw.write(0x00);
-                self.command_register_w.write(0xEC);
+                self.command_register_w.write(ATACommands::Identify as u8);
                 let status = self.status_register_r.read();
                 if status == 0 {
                     return Err(ATAIdentifyError::NoDevice);
                 }
-                let not_busy = self.wait_for(status_register_flags::BSY, false);
-                match not_busy {
-                    Ok(_) => {
-                        let data_request_ready = self.wait_for(status_register_flags::DRQ, true);
-                        match data_request_ready {
-                            Ok(_) => {
-                                let mut identify_buffer: [u16; 256] = [0; 256];
-                                self.data_register_rw.read_to_buffer(&mut identify_buffer);
-
-                                Ok(ATADescriptor::new(identify_buffer))
-                            }
-                            Err(error) => Err(handle_identify_error(self, error)),
-                        }
-                    }
-                    Err(error) => Err(handle_identify_error(self, error)),
+                if let Err(error) = self.wait_for(status_register_flags::BSY, false) {
+                    return Err(handle_identify_error(self, error));
                 }
+                if let Err(error) = self.wait_for(status_register_flags::DRQ, true) {
+                    return Err(handle_identify_error(self, error));
+                }
+                let mut identify_buffer: [u16; 256] = [0; 256];
+                self.data_register_rw.read_to_buffer(&mut identify_buffer);
+
+                Ok(ATADescriptor::new(identify_buffer))
             })
         }
+    }
+
+    pub fn read_sector(&mut self, master: bool, lba: u64) -> Result<[u8; 512], u8> {
+        if lba > u32::MAX.into() {
+            todo!("LBA48 not supported");
+        }
+        unsafe {
+            let slave = if master { 0xE0 } else { 0xF0 };
+            self.drive_head_register_rw
+                .write(slave | ((lba >> 24) & 0x0F) as u8);
+            self.features_register_w.write(0x00);
+            self.sector_count_register_rw.write(0x01);
+            self.lba_low_register_rw.write(lba as u8);
+            self.lba_mid_register_rw.write((lba >> 8) as u8);
+            self.lba_high_register_rw.write((lba >> 16) as u8);
+            self.command_register_w
+                .write(ATACommands::ReadSectors as u8);
+            self.wait_for(status_register_flags::BSY, false)?;
+            self.wait_for(status_register_flags::DRQ, true)?;
+            let mut buffer = [0u8; 512];
+            self.data_register_rw.read_to_buffer(&mut buffer);
+            self.wait_400ns()?;
+            Ok(buffer)
+        }
+    }
+
+    pub fn write_sector(&mut self, master: bool, lba: u64, buffer: &[u8; 512]) -> Result<(), u8> {
+        if lba > u32::MAX.into() {
+            todo!("LBA48 not supported");
+        }
+        unsafe {
+            let slave = if master { 0xE0 } else { 0xF0 };
+            self.drive_head_register_rw
+                .write(slave | ((lba >> 24) & 0x0F) as u8);
+            self.features_register_w.write(0x00);
+            self.sector_count_register_rw.write(0x01);
+            self.lba_low_register_rw.write(lba as u8);
+            self.lba_mid_register_rw.write((lba >> 8) as u8);
+            self.lba_high_register_rw.write((lba >> 16) as u8);
+            self.command_register_w
+                .write(ATACommands::WriteSectors as u8);
+            self.wait_for(status_register_flags::BSY, false)?;
+            self.wait_for(status_register_flags::DRQ, true)?;
+            self.data_register_rw.write_from_buffer(buffer);
+            self.wait_400ns()?;
+            self.wait_for(status_register_flags::DRQ, false)?;
+            self.wait_for(status_register_flags::BSY, false)?;
+            self.command_register_w.write(ATACommands::CacheFlush as u8);
+            self.wait_for(status_register_flags::BSY, false)?;
+            Ok(())
+        }
+    }
+
+    pub fn get_partitions(&mut self, master: bool) -> Result<Vec<Partition>, u8> {
+        let mbr = self.read_sector(master, 0)?;
+        Ok(Vec::from_iter(
+            mbr[446..510].chunks(16).filter_map(Partition::from_bytes),
+        ))
     }
 }

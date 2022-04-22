@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 #![feature(custom_test_frameworks)]
-#![test_runner(os_core::test_framework::test_runner)]
+#![test_runner(kernel::test_framework::test_runner)]
 #![feature(abi_x86_interrupt)]
 #![reexport_test_harness_main = "test_main"]
 
@@ -9,7 +9,7 @@ use core::panic::PanicInfo;
 use lazy_static::lazy_static;
 
 use bootloader::{entry_point, BootInfo};
-use os_core::{
+use kernel::{
     ansi_colors::{Green, Red, Yellow},
     serial_print, serial_println,
     test_framework::qemu_exit::{exit_qemu, QemuExitCode},
@@ -18,7 +18,7 @@ use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, Pag
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    os_core::test_panic_handler(info)
+    kernel::test_panic_handler(info)
 }
 
 entry_point!(kernel_start);
@@ -27,7 +27,7 @@ pub fn kernel_start(_boot_info: &'static mut BootInfo) -> ! {
     serial_println!("{} 1 {}", Yellow("Running"), Yellow("test(s):"));
 
     serial_print!("page_fault::page_fault_test...\t");
-    os_core::gdt::init_gdt();
+    kernel::gdt::init_gdt();
     init_test_idt();
 
     // should throw a page fault with protection violation

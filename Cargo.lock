@@ -6,7 +6,7 @@ version = 3
 name = "ata"
 version = "0.1.0"
 dependencies = [
- "os_core",
+ "kernel",
  "spin 0.9.3",
  "x86_64",
 ]
@@ -58,6 +58,20 @@ name = "json"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "078e285eafdfb6c4b434e0d31e8cfcb5115b651496faca5749b88fafd4f23bfd"
+
+[[package]]
+name = "kernel"
+version = "0.1.0"
+dependencies = [
+ "bootloader",
+ "lazy_static",
+ "linked_list_allocator",
+ "pc-keyboard",
+ "pic8259",
+ "spin 0.9.3",
+ "uart_16550",
+ "x86_64",
+]
 
 [[package]]
 name = "lazy_static"
@@ -114,25 +128,11 @@ version = "0.1.0"
 dependencies = [
  "ata",
  "bootloader",
+ "kernel",
  "lazy_static",
- "os_core",
  "spin 0.9.3",
  "vga",
  "volatile",
- "x86_64",
-]
-
-[[package]]
-name = "os_core"
-version = "0.1.0"
-dependencies = [
- "bootloader",
- "lazy_static",
- "linked_list_allocator",
- "pc-keyboard",
- "pic8259",
- "spin 0.9.3",
- "uart_16550",
  "x86_64",
 ]
 
@@ -267,9 +267,9 @@ checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
 name = "vga"
 version = "0.1.0"
 dependencies = [
+ "kernel",
  "lazy_static",
  "noto-sans-mono-bitmap",
- "os_core",
  "spin 0.9.3",
 ]
 

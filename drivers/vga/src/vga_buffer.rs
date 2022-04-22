@@ -1,9 +1,9 @@
 use alloc::slice;
-use noto_sans_mono_bitmap::{get_bitmap, BitmapChar};
-use os_core::structures::{
+use kernel::structures::{
     kernel_information::{KernelInformation, PixelFormat},
     static_stack::StaticStack,
 };
+use noto_sans_mono_bitmap::{get_bitmap, BitmapChar};
 
 use crate::vga_core::{CHAR_HEIGHT, INVALID_CHAR};
 
