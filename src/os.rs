@@ -11,17 +11,22 @@
 #![test_runner(os_core::test_framework::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
-use ata::constants::{PRIMARY_ATA_BUS, SECONDARY_ATA_BUS};
-use bootloader::{entry_point, BootInfo};
-use core::panic::PanicInfo;
-use os_core::{log_print, structures::kernel_information::KernelInformation};
-use vga::{vga_buffer::VGADeviceFactory, vga_color, vga_core::Clearable};
 extern crate alloc;
 
 use alloc::boxed::Box;
 use core::alloc::Layout;
+use core::panic::PanicInfo;
 
+use bootloader::{entry_point, BootInfo};
+use x86_64::structures::paging::{Page, PageTableFlags};
+use x86_64::VirtAddr;
+
+use ata::constants::{PRIMARY_ATA_BUS, SECONDARY_ATA_BUS};
 use os_core::log_println;
+use os_core::memory::page_table;
+use os_core::memory::page_table::{BootInfoFrameAllocator, MEMORY_MAPPER};
+use os_core::{log_print, structures::kernel_information::KernelInformation};
+use vga::{vga_buffer::VGADeviceFactory, vga_color, vga_core::Clearable};
 
 entry_point!(kernel);
 pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
@@ -42,6 +47,7 @@ pub fn kernel_main(kernel_info: KernelInformation) {
     let mut device = VGADeviceFactory::from_kernel_info(kernel_info);
     device.clear(vga_color::BLACK);
 
+    /*
     let disk_tests = [
         (PRIMARY_ATA_BUS, true),
         (PRIMARY_ATA_BUS, false),
@@ -97,10 +103,31 @@ pub fn kernel_main(kernel_info: KernelInformation) {
             }
         }
     }
+    */
 
     let test = Box::new(4);
     log_println!("New boxed value: {:#?}", test);
     log_println!("im not dying :)");
+
+    let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&kernel_info.memory_regions) };
+    let mut memory_mapper = MEMORY_MAPPER.lock();
+
+    // should map virtual address 4444_0000_0000 to physical address 4444_4444_0000
+    let page = Page::containing_address(VirtAddr::new(0x4444_0000_0000));
+    page_table::create_mapping(
+        page,
+        0x4444_4444_0000,
+        PageTableFlags::PRESENT | PageTableFlags::WRITABLE,
+        memory_mapper.as_mut().unwrap(),
+        &mut frame_allocator,
+    );
+
+    let page_ptr: *mut u64 = page.start_address().as_mut_ptr();
+
+    unsafe {
+        page_ptr.offset(300).write_volatile(42);
+        log_println!("Did this work= {}", page_ptr.offset(300).read_volatile())
+    }
 }
 
 /// Panic handler for the OS.
@@ -113,7 +140,7 @@ fn panic(info: &PanicInfo) -> ! {
 
 /// This is the main function for tests.
 #[cfg(test)]
-pub fn kernel_test(kernel_info: KernelInformation) {
+pub fn kernel_test(_kernel_info: KernelInformation) {
     test_main();
 }
 

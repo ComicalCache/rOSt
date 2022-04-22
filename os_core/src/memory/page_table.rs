@@ -1,5 +1,15 @@
-use x86_64::{PhysAddr, structures::paging::{FrameAllocator, OffsetPageTable, PageTable, PhysFrame, Size4KiB}, VirtAddr};
 use bootloader::boot_info::{MemoryRegionKind, MemoryRegions};
+use lazy_static::lazy_static;
+use spin::Mutex;
+use x86_64::structures::paging::{Mapper, Page, PageTableFlags};
+use x86_64::{
+    structures::paging::{FrameAllocator, OffsetPageTable, PageTable, PhysFrame, Size4KiB},
+    PhysAddr, VirtAddr,
+};
+
+lazy_static! {
+    pub static ref MEMORY_MAPPER: Mutex<Option<OffsetPageTable<'static>>> = Mutex::new(None);
+}
 
 /// Initialize a new OffsetPageTable.
 ///
@@ -7,9 +17,11 @@ use bootloader::boot_info::{MemoryRegionKind, MemoryRegions};
 /// complete physical memory is mapped to virtual memory at the passed
 /// `physical_memory_offset`. Also, this function must be only called once
 /// to avoid aliasing `&mut` references (which is undefined behavior).
-pub unsafe fn init(physical_memory_offset: VirtAddr) -> OffsetPageTable<'static> {
+pub unsafe fn init(physical_memory_offset: VirtAddr) {
     let level_4_table = active_level_4_table(physical_memory_offset);
-    OffsetPageTable::new(level_4_table, physical_memory_offset)
+    let _ = MEMORY_MAPPER
+        .lock()
+        .insert(OffsetPageTable::new(level_4_table, physical_memory_offset));
 }
 
 /// Returns a mutable reference to the active level 4 table.
@@ -50,8 +62,9 @@ impl BootInfoFrameAllocator {
     }
 
     /// Returns an iterator over the usable frames specified in the memory map.
-    fn usable_frames(&self) -> impl Iterator<Item=PhysFrame> {
-        self.memory_map.iter()
+    fn usable_frames(&self) -> impl Iterator<Item = PhysFrame> {
+        self.memory_map
+            .iter()
             .filter(|r| r.kind == MemoryRegionKind::Usable)
             // map each region to its address range
             .map(|r| r.start..r.end)
@@ -70,4 +83,23 @@ unsafe impl FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
         self.next += 1;
         frame
     }
+}
+
+pub fn create_mapping(
+    page: Page,
+    address: u64,
+    flags: PageTableFlags,
+    mapper: &mut OffsetPageTable,
+    frame_allocator: &mut impl FrameAllocator<Size4KiB>,
+) {
+    let frame = PhysFrame::containing_address(PhysAddr::new(address));
+
+    let map_to_result = unsafe {
+        // FIXME: this is not safe, we do it only for testing
+        // TODO: add checking for frame not in use
+
+        // hangs in an endless loop :(
+        mapper.map_to(page, frame, flags, frame_allocator)
+    };
+    map_to_result.expect("map_to failed").flush();
 }
