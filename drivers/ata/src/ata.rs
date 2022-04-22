@@ -1,11 +1,19 @@
 #![no_std] // no standard library
 #![no_main]
-use os_core::structures::{driver::Driver, kernel_information::KernelInformation};
+use kernel::structures::{driver::Driver, kernel_information::KernelInformation};
 extern crate alloc;
 
-pub mod bus;
-pub mod constants;
-pub mod descriptor;
+mod constants;
+pub use constants::{ATAIdentifyError, PRIMARY_ATA_BUS, SECONDARY_ATA_BUS};
+
+mod bus;
+pub use bus::ATABus;
+
+mod descriptor;
+pub use descriptor::ATADescriptor;
+
+mod partition;
+pub use partition::Partition;
 
 pub extern "C" fn driver_init(_kernel_info: KernelInformation) -> Driver {
     Driver {

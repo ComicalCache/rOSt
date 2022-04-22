@@ -1,22 +1,22 @@
 #![no_std]
 #![no_main]
 #![feature(custom_test_frameworks)]
-#![test_runner(os_core::test_framework::test_runner)]
+#![test_runner(kernel::test_framework::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
 use core::panic::PanicInfo;
 
-use bootloader::{BootInfo, entry_point};
+use bootloader::{entry_point, BootInfo};
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    os_core::test_panic_handler(info)
+    kernel::test_panic_handler(info)
 }
 
 entry_point!(kernel_start);
 #[no_mangle]
 pub fn kernel_start(_boot_info: &'static mut BootInfo) -> ! {
-    os_core::init(_boot_info);
+    kernel::init(_boot_info);
     test_main();
     loop {}
 }

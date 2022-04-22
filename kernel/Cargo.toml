@@ -1,11 +1,11 @@
 [package]
-name = "os_core"
+name = "kernel"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "os_core"
-path = "src/os_core.rs"
+name = "kernel"
+path = "src/kernel.rs"
 
 [dependencies]
 bootloader = "0.10.12"

@@ -51,5 +51,17 @@ pub enum ATAIdentifyError {
     Unknown = 255,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
+#[repr(u8)]
+#[non_exhaustive]
+pub enum ATACommands {
+    Identify = 0xEC,
+    WriteSectors = 0x30,
+    ReadSectors = 0x20,
+    CacheFlush = 0xE7,
+}
+
 pub const PRIMARY_ATA_BUS: Mutex<ATABus> = Mutex::new(ATABus::new(0x1F0));
 pub const SECONDARY_ATA_BUS: Mutex<ATABus> = Mutex::new(ATABus::new(0x170));
+
+pub const PARTITION_ID: u8 = 0xED;

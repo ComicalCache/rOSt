@@ -3,7 +3,7 @@
 #![feature(ptr_const_cast)]
 use alloc::boxed::Box;
 use core::fmt;
-use os_core::{
+use kernel::{
     logger::Logger,
     structures::{driver::Driver, kernel_information::KernelInformation},
 };
@@ -61,7 +61,7 @@ impl fmt::Write for VGALogger {
 }
 
 pub extern "C" fn driver_init(kernel_info: KernelInformation) -> Driver {
-    os_core::logger::LOGGER.lock().replace(Box::new(VGALogger {
+    kernel::logger::LOGGER.lock().replace(Box::new(VGALogger {
         x: 0,
         start_x: 0,
         y: 0,

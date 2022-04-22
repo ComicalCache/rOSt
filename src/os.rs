@@ -8,39 +8,40 @@
     core_intrinsics,
     alloc_error_handler
 )]
-#![test_runner(os_core::test_framework::test_runner)]
+#![test_runner(kernel::test_framework::test_runner)]
 #![reexport_test_harness_main = "test_main"]
-
 extern crate alloc;
 
 use alloc::boxed::Box;
-use core::alloc::Layout;
-use core::panic::PanicInfo;
-
+use ata::{PRIMARY_ATA_BUS, SECONDARY_ATA_BUS};
 use bootloader::{entry_point, BootInfo};
+use core::panic::PanicInfo;
+use kernel::structures::kernel_information::KernelInformation;
+use vga::{vga_buffer::VGADeviceFactory, vga_color, vga_core::Clearable};
+
+use alloc::{format, string::String};
+use core::alloc::Layout;
+
 use x86_64::structures::paging::{Page, PageTableFlags};
 use x86_64::VirtAddr;
 
-use ata::constants::{PRIMARY_ATA_BUS, SECONDARY_ATA_BUS};
-use os_core::log_println;
-use os_core::memory::page_table;
-use os_core::memory::page_table::{BootInfoFrameAllocator, MEMORY_MAPPER};
-use os_core::{log_print, structures::kernel_information::KernelInformation};
-use vga::{vga_buffer::VGADeviceFactory, vga_color, vga_core::Clearable};
+use kernel::log_println;
+use kernel::memory::page_table;
+use kernel::memory::page_table::{BootInfoFrameAllocator, MEMORY_MAPPER};
 
 entry_point!(kernel);
 pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
-    let kernel_info = os_core::init(boot_info);
-    os_core::register_driver(vga::driver_init);
-    os_core::register_driver(ata::driver_init);
-    os_core::reload_drivers(kernel_info);
+    let kernel_info = kernel::init(boot_info);
+    kernel::register_driver(vga::driver_init);
+    kernel::register_driver(ata::driver_init);
+    kernel::reload_drivers(kernel_info);
 
     #[cfg(test)]
     kernel_test(kernel_info);
     #[cfg(not(test))]
     kernel_main(kernel_info);
 
-    os_core::hlt_loop();
+    kernel::hlt_loop();
 }
 
 pub fn kernel_main(kernel_info: KernelInformation) {
@@ -55,54 +56,19 @@ pub fn kernel_main(kernel_info: KernelInformation) {
         (SECONDARY_ATA_BUS, false),
     ];
     for (index, (bus, master)) in disk_tests.iter().enumerate() {
-        let descriptor = bus.lock().identify(*master);
-        match descriptor {
-            Ok(descriptor) => {
-                log_println!("{}:ATA device discovered", index);
-                log_println!("  Is fixed: {:?}", descriptor.fixed_device);
-                log_println!("  Is removable: {:?}", descriptor.removable_media);
-                log_println!("  Is ATA device: {:?}", descriptor.is_ata_device);
-
-                log_println!("  Cylinders: {}", descriptor.cylinders);
-                log_println!("  Heads: {}", descriptor.heads);
-                log_println!("  Sectors per Track: {}", descriptor.sectors_per_track);
-
-                log_println!("  Vendor Unique: {:x?}", descriptor.vendor_unique);
-
-                log_println!("  Serial Number: {:?}", descriptor.serial_number());
-
-                log_println!("  Firmware Revision: {:x?}", descriptor.firmware_revision);
-
-                log_println!("  Model Number: {:?}", descriptor.model_number());
-
-                log_print!("  UDMA available modes: ");
-
-                for (i, mode) in descriptor.udma_available_modes.iter().enumerate() {
-                    if *mode {
-                        log_print!("{} ", i + 1);
-                    }
-                }
-                log_println!();
-                log_println!(
-                    "  UDMA active mode: UDMA{}",
-                    8 - descriptor.udma_current_mode.leading_zeros()
-                );
-
-                log_println!(
-                    "  Supported LBA 28 sectors: {}",
-                    descriptor.lba_28_addressable_sectors
-                );
-                log_println!("  Supports LBA 48: {}", descriptor.supports_lba_48);
-                log_println!(
-                    "  Supported LBA 48 sectors: {}",
-                    descriptor.lba_48_addressable_sectors
-                );
-            }
-            Err(error) => {
-                log_println!("{}:ATA device error: {:?}", index, error);
-            }
+        let mut bus_instance = bus.lock();
+        let descriptor = bus_instance.identify(*master);
+        if let Ok(descriptor) = descriptor {
+            log_println!(
+                "Found a disk: {} ({})",
+                descriptor.model_number().trim(),
+                format_size(descriptor.lba_48_addressable_sectors * 512)
+            );
+            let partitions = bus_instance.get_partitions(*master);
+            log_println!("  Partitions: {:?}", partitions.ok().unwrap());
         }
     }
+
     */
 
     let test = Box::new(4);
@@ -130,12 +96,25 @@ pub fn kernel_main(kernel_info: KernelInformation) {
     }
 }
 
+fn format_size(bytes: u64) -> String {
+    if bytes < 1024 {
+        return format!("{}B", bytes);
+    }
+    if bytes < 1024 * 1024 {
+        return format!("{}KB", bytes / 1024);
+    }
+    if bytes < 1024 * 1024 * 1024 {
+        return format!("{}MB", bytes / 1024 / 1024);
+    }
+    format!("{}GB", bytes / 1024 / 1024 / 1024)
+}
+
 /// Panic handler for the OS.
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    os_core::log_print!("{}", info);
-    os_core::hlt_loop();
+    kernel::log_print!("{}", info);
+    kernel::hlt_loop();
 }
 
 /// This is the main function for tests.
@@ -149,7 +128,7 @@ pub fn kernel_test(_kernel_info: KernelInformation) {
 #[panic_handler]
 // this function is called if a panic occurs and it is a test, all output is redirected to the serial port
 fn panic(info: &PanicInfo) -> ! {
-    os_core::test_panic_handler(info);
+    kernel::test_panic_handler(info);
 }
 
 #[alloc_error_handler]
