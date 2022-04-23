@@ -24,9 +24,9 @@ use crate::test_framework::qemu_exit::exit_qemu;
 use crate::test_framework::qemu_exit::QemuExitCode;
 pub use crate::test_framework::serial;
 
-pub mod memory;
 pub mod interrupts;
 pub mod logger;
+pub mod memory;
 pub mod structures;
 pub mod test_framework;
 
@@ -57,7 +57,8 @@ pub fn init(boot_info: &'static BootInfo) -> KernelInformation {
 
     let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_regions) };
     let mut mapper = MEMORY_MAPPER.lock();
-    memory::heap::init_heap(mapper.as_mut().unwrap(), &mut frame_allocator).expect("heap initialization failed");
+    memory::heap::init_heap(mapper.as_mut().unwrap(), &mut frame_allocator)
+        .expect("heap initialization failed");
 
     kernel_info
 }

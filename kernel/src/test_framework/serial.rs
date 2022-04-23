@@ -13,10 +13,10 @@ macro_rules! serial_print {
 /// Prints to the host through the serial interface, appending a newline.
 #[macro_export]
 macro_rules! serial_println {
-    () => ($crate::serial_print!("\n"));
-    ($fmt:expr) => ($crate::serial_print!(concat!($fmt, "\n")));
+    () => ($crate::serial_print!("\r\n"));
+    ($fmt:expr) => ($crate::serial_print!(concat!($fmt, "\r\n")));
     ($fmt:expr, $($arg:tt)*) => ($crate::serial_print!(
-        concat!($fmt, "\n"), $($arg)*));
+        concat!($fmt, "\r\n"), $($arg)*));
 }
 
 #[doc(hidden)]
