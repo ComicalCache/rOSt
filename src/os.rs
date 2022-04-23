@@ -8,7 +8,7 @@
     core_intrinsics,
     alloc_error_handler
 )]
-#![test_runner(kernel::test_framework::test_runner)]
+#![test_runner(kernel::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 extern crate alloc;
 
@@ -17,7 +17,6 @@ use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 use kernel::structures::kernel_information::KernelInformation;
 
-use alloc::{format, string::String};
 use core::alloc::Layout;
 
 use kernel::log_println;
@@ -41,19 +40,6 @@ pub fn kernel_main(kernel_info: KernelInformation) {
     let test = Box::new(4);
     log_println!("New boxed value: {:#?}", test);
     log_println!("im not dying :)");
-}
-
-fn format_size(bytes: u64) -> String {
-    if bytes < 1024 {
-        return format!("{}B", bytes);
-    }
-    if bytes < 1024 * 1024 {
-        return format!("{}KiB", bytes / 1024);
-    }
-    if bytes < 1024 * 1024 * 1024 {
-        return format!("{}MiB", bytes / 1024 / 1024);
-    }
-    format!("{}GiB", bytes / 1024 / 1024 / 1024)
 }
 
 /// Panic handler for the OS.
