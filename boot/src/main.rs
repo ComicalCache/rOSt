@@ -40,6 +40,7 @@ fn main() {
     }
     let mut run_cmd = Command::new("qemu-system-x86_64");
     run_cmd
+        .args(["-serial", "stdio"])
         .args(["-m", "256"])
         .args(["-hda", &bios.display().to_string()])
         .args(["-drive", "if=none,id=disk,file=test_disk.img"])

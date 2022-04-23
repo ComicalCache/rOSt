@@ -13,21 +13,14 @@
 extern crate alloc;
 
 use alloc::boxed::Box;
-use ata::{PRIMARY_ATA_BUS, SECONDARY_ATA_BUS};
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 use kernel::structures::kernel_information::KernelInformation;
-use vga::{vga_buffer::VGADeviceFactory, vga_color, vga_core::Clearable};
 
 use alloc::{format, string::String};
 use core::alloc::Layout;
 
-use x86_64::structures::paging::{Page, PageTableFlags};
-use x86_64::VirtAddr;
-
 use kernel::log_println;
-use kernel::memory::page_table;
-use kernel::memory::page_table::{BootInfoFrameAllocator, MEMORY_MAPPER};
 
 entry_point!(kernel);
 pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
@@ -45,55 +38,9 @@ pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
 }
 
 pub fn kernel_main(kernel_info: KernelInformation) {
-    let mut device = VGADeviceFactory::from_kernel_info(kernel_info);
-    device.clear(vga_color::BLACK);
-
-    /*
-    let disk_tests = [
-        (PRIMARY_ATA_BUS, true),
-        (PRIMARY_ATA_BUS, false),
-        (SECONDARY_ATA_BUS, true),
-        (SECONDARY_ATA_BUS, false),
-    ];
-    for (index, (bus, master)) in disk_tests.iter().enumerate() {
-        let mut bus_instance = bus.lock();
-        let descriptor = bus_instance.identify(*master);
-        if let Ok(descriptor) = descriptor {
-            log_println!(
-                "Found a disk: {} ({})",
-                descriptor.model_number().trim(),
-                format_size(descriptor.lba_48_addressable_sectors * 512)
-            );
-            let partitions = bus_instance.get_partitions(*master);
-            log_println!("  Partitions: {:?}", partitions.ok().unwrap());
-        }
-    }
-
-    */
-
     let test = Box::new(4);
     log_println!("New boxed value: {:#?}", test);
     log_println!("im not dying :)");
-
-    let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&kernel_info.memory_regions) };
-    let mut memory_mapper = MEMORY_MAPPER.lock();
-
-    // should map virtual address 4444_0000_0000 to physical address 4444_4444_0000
-    let page = Page::containing_address(VirtAddr::new(0x4444_0000_0000));
-    page_table::create_mapping(
-        page,
-        0x4444_4444_0000,
-        PageTableFlags::PRESENT | PageTableFlags::WRITABLE,
-        memory_mapper.as_mut().unwrap(),
-        &mut frame_allocator,
-    );
-
-    let page_ptr: *mut u64 = page.start_address().as_mut_ptr();
-
-    unsafe {
-        page_ptr.offset(300).write_volatile(42);
-        log_println!("Did this work= {}", page_ptr.offset(300).read_volatile())
-    }
 }
 
 fn format_size(bytes: u64) -> String {
@@ -101,12 +48,12 @@ fn format_size(bytes: u64) -> String {
         return format!("{}B", bytes);
     }
     if bytes < 1024 * 1024 {
-        return format!("{}KB", bytes / 1024);
+        return format!("{}KiB", bytes / 1024);
     }
     if bytes < 1024 * 1024 * 1024 {
-        return format!("{}MB", bytes / 1024 / 1024);
+        return format!("{}MiB", bytes / 1024 / 1024);
     }
-    format!("{}GB", bytes / 1024 / 1024 / 1024)
+    format!("{}GiB", bytes / 1024 / 1024 / 1024)
 }
 
 /// Panic handler for the OS.

@@ -1,15 +1,15 @@
+use crate::memory::allocator::ALLOCATOR;
 use x86_64::{
     structures::paging::{
-        FrameAllocator, Mapper, mapper::MapToError, Page, PageTableFlags, Size4KiB,
+        mapper::MapToError, FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB,
     },
     VirtAddr,
 };
-use crate::memory::allocator::ALLOCATOR;
 
 /// Where the heap starts
-pub const HEAP_START: usize = 0xffced00;
+pub const HEAP_START: usize = 0x_5555_AAAA_0000;
 /// Size of the heap
-pub const HEAP_SIZE: usize = 100 * 1024; // 100 KiB
+pub const HEAP_SIZE: usize = 10 * 1024 * 1024; // 10 MiB
 
 /// maps the kernels heap memory area to physical addresses
 pub fn init_heap(
@@ -30,9 +30,7 @@ pub fn init_heap(
             .allocate_frame()
             .ok_or(MapToError::FrameAllocationFailed)?;
         let flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE;
-        unsafe {
-            mapper.map_to(page, frame, flags, frame_allocator)?.flush()
-        };
+        unsafe { mapper.map_to(page, frame, flags, frame_allocator)?.flush() };
     }
 
     unsafe {
