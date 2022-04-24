@@ -6,7 +6,7 @@ use uart_16550::SerialPort;
 #[macro_export]
 macro_rules! serial_print {
     ($($arg:tt)*) => {
-        $crate::test_framework::serial::__print(format_args!($($arg)*));
+        $crate::serial::__print(format_args!($($arg)*));
     };
 }
 
@@ -33,7 +33,7 @@ pub fn __print(args: ::core::fmt::Arguments) {
 }
 
 lazy_static! {
-    pub static ref SERIAL1: Mutex<SerialPort> = {
+    static ref SERIAL1: Mutex<SerialPort> = {
         let mut serial_port = unsafe { SerialPort::new(0x3F8) };
         serial_port.init();
         Mutex::new(serial_port)
