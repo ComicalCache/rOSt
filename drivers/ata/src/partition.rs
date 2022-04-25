@@ -1,19 +1,37 @@
-#[derive(Debug, PartialEq, Eq)]
-pub struct Partition {
-    pub bootable: bool,
-    pub start_lba: u32,
-    pub sectors: u32,
+use crate::{constants::ErrorRegisterFlags, ATADisk, PartitionDescriptor};
+
+#[derive(Clone)]
+pub struct ATAPartition {
+    pub(crate) disk: ATADisk,
+    pub descriptor: PartitionDescriptor,
 }
 
-impl Partition {
-    pub(crate) fn from_bytes(bytes: &[u8]) -> Option<Partition> {
-        if bytes.iter().all(|b| *b == 0x00) {
-            return None;
+impl ATAPartition {
+    pub fn read_sector(&mut self, lba: u64) -> Result<[u8; 512], PartitionIOError> {
+        if lba >= self.descriptor.sectors {
+            Err(PartitionIOError::AddressNotInRange)
+        } else {
+            self.disk
+                .read_sector(lba + self.descriptor.start_lba)
+                .map_err(|err| PartitionIOError::ATAError(err))
         }
-        Some(Partition {
-            bootable: bytes[0] == 0x80,
-            start_lba: u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
-            sectors: u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
-        })
     }
+
+    pub fn write_sector(&mut self, lba: u64, buffer: &[u8; 512]) -> Result<(), PartitionIOError> {
+        if lba >= self.descriptor.sectors {
+            Err(PartitionIOError::AddressNotInRange)
+        } else {
+            self.disk
+                .write_sector(lba + self.descriptor.start_lba, buffer)
+                .map_err(|err| PartitionIOError::ATAError(err))
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PartitionIOError {
+    ATAError(ErrorRegisterFlags),
+    AddressNotInRange,
+    TooManyPartitions,
+    Unknown,
 }

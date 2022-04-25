@@ -59,8 +59,7 @@ impl<A: PortWriteAccess> PortExtWrite<u8> for PortGeneric<u16, A> {
         while index < buffer.len() {
             let mut value = buffer[index] as u16;
             index += 1;
-            value <<= 8;
-            value |= buffer[index] as u16;
+            value = ((buffer[index] as u16) << 8) | value;
             self.write(value);
             index += 1;
         }

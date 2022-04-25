@@ -1,43 +1,63 @@
+use alloc::sync::Arc;
 use spin::Mutex;
 
 use super::bus::ATABus;
+use lazy_static::lazy_static;
 
-pub mod status_register_flags {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum StatusRegisterFlags {
     /// Busy
-    pub const BSY: u8 = 0x80;
+    BSY = 0x80,
     /// Device Ready
-    pub const DRDY: u8 = 0x40;
+    DRDY = 0x40,
     /// Device Fault
-    pub const DF: u8 = 0x20;
+    DF = 0x20,
     /// Seek Complete
-    pub const DSC: u8 = 0x10;
+    DSC = 0x10,
     /// Data Transfer Required
-    pub const DRQ: u8 = 0x08;
+    DRQ = 0x08,
     /// Data Corrected
-    pub const CORR: u8 = 0x04;
+    CORR = 0x04,
     /// Index Mark
-    pub const IDX: u8 = 0x02;
+    IDX = 0x02,
     /// Error
-    pub const ERR: u8 = 0x01;
+    ERR = 0x01,
 }
 
-pub mod error_register_flags {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum ErrorRegisterFlags {
     /// Bad Block
-    pub const BBK: u8 = 0x80;
+    BBK = 0x80,
     /// Uncorrectable Data Error
-    pub const UNC: u8 = 0x40;
+    UNC = 0x40,
     /// Media Changed
-    pub const MC: u8 = 0x20;
+    MC = 0x20,
     /// ID Mark Not Found
-    pub const IDNF: u8 = 0x10;
+    IDNF = 0x10,
     /// Media Change Requested
-    pub const MCR: u8 = 0x08;
+    MCR = 0x08,
     /// Command Aborted
-    pub const ABRT: u8 = 0x04;
+    ABRT = 0x04,
     /// Track 0 Not Found
-    pub const TK0NF: u8 = 0x02;
+    TK0NF = 0x02,
     /// Address Mark Not Found
-    pub const AMNF: u8 = 0x01;
+    AMNF = 0x01,
+}
+
+pub(crate) fn get_error_flag(error: u8) -> ErrorRegisterFlags {
+    match error {
+        0x80 => ErrorRegisterFlags::BBK,
+        0x40 => ErrorRegisterFlags::UNC,
+        0x20 => ErrorRegisterFlags::MC,
+        0x10 => ErrorRegisterFlags::IDNF,
+        0x08 => ErrorRegisterFlags::MCR,
+        0x04 => ErrorRegisterFlags::ABRT,
+        0x02 => ErrorRegisterFlags::TK0NF,
+        0x01 => ErrorRegisterFlags::AMNF,
+        _ => ErrorRegisterFlags::UNC,
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -61,7 +81,8 @@ pub enum ATACommands {
     CacheFlush = 0xE7,
 }
 
-pub const PRIMARY_ATA_BUS: Mutex<ATABus> = Mutex::new(ATABus::new(0x1F0));
-pub const SECONDARY_ATA_BUS: Mutex<ATABus> = Mutex::new(ATABus::new(0x170));
-
+lazy_static! {
+    pub static ref PRIMARY_ATA_BUS: Arc<Mutex<ATABus>> = Arc::new(Mutex::new(ATABus::new(0x1F0)));
+    pub static ref SECONDARY_ATA_BUS: Arc<Mutex<ATABus>> = Arc::new(Mutex::new(ATABus::new(0x170)));
+}
 pub const PARTITION_ID: u8 = 0xED;
