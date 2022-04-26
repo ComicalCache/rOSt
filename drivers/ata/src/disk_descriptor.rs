@@ -1,4 +1,5 @@
-pub struct ATADescriptor {
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct DiskDescriptor {
     pub fixed_device: bool,
     pub removable_media: bool,
     pub is_ata_device: bool,
@@ -17,7 +18,7 @@ pub struct ATADescriptor {
     pub lba_48_addressable_sectors: u64,
 }
 
-impl ATADescriptor {
+impl DiskDescriptor {
     pub fn serial_number(&self) -> &str {
         core::str::from_utf8(&self.serial_number_bytes).unwrap()
     }

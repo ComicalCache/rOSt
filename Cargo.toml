@@ -9,6 +9,7 @@ path = "src/os.rs"
 
 [workspace]
 members = [
+    "utils",
     "boot",
     "kernel",
     "drivers/ata",
@@ -19,6 +20,7 @@ members = [
 map-physical-memory = true
 
 [dependencies]
+utils = { path = "utils"}
 kernel = { path = "kernel" }
 vga = { path = "drivers/vga" }
 ata = { path = "drivers/ata" }

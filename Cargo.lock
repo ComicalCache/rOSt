@@ -7,7 +7,9 @@ name = "ata"
 version = "0.1.0"
 dependencies = [
  "kernel",
+ "lazy_static",
  "spin 0.9.3",
+ "utils",
  "x86_64",
 ]
 
@@ -70,6 +72,7 @@ dependencies = [
  "pic8259",
  "spin 0.9.3",
  "uart_16550",
+ "utils",
  "x86_64",
 ]
 
@@ -131,6 +134,7 @@ dependencies = [
  "kernel",
  "lazy_static",
  "spin 0.9.3",
+ "utils",
  "vga",
  "volatile",
  "x86_64",
@@ -264,6 +268,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
 
 [[package]]
+name = "utils"
+version = "0.1.0"
+dependencies = [
+ "x86_64",
+]
+
+[[package]]
 name = "vga"
 version = "0.1.0"
 dependencies = [
@@ -271,6 +282,7 @@ dependencies = [
  "lazy_static",
  "noto-sans-mono-bitmap",
  "spin 0.9.3",
+ "utils",
 ]
 
 [[package]]

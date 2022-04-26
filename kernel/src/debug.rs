@@ -3,7 +3,7 @@ use bootloader::boot_info::{MemoryRegionKind, MemoryRegions};
 use crate::serial_println;
 
 pub fn print_memory_map(memory_map: &MemoryRegions) {
-    serial_println!("[    ---MEMORY MAP---    ]");
+    serial_println!("[   ---{:^15}---   ]", "MEMORY MAP");
     memory_map.iter().for_each(|region| {
         let mut size = region.end - region.start;
         let mut size_format = "B";

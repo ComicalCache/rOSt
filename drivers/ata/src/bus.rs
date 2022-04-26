@@ -1,16 +1,17 @@
-use alloc::vec::Vec;
-use kernel::structures::port_extensions::{PortExtRead, PortExtWrite};
+use alloc::sync::Arc;
+use spin::Mutex;
+use utils::port_extensions::{PortExtRead, PortExtWrite};
 use x86_64::instructions::{
     interrupts::without_interrupts,
     port::{Port, PortReadOnly, PortWriteOnly},
 };
 
-use crate::{constants::ATACommands, partition::Partition};
-
-use super::{
-    constants::{error_register_flags, status_register_flags, ATAIdentifyError},
-    descriptor::ATADescriptor,
+use crate::{
+    constants::{get_error_flag, ATACommands, ErrorRegisterFlags, StatusRegisterFlags},
+    ATADisk,
 };
+
+use super::{constants::ATAIdentifyError, disk_descriptor::DiskDescriptor};
 
 #[allow(dead_code)]
 pub struct ATABus {
@@ -27,6 +28,9 @@ pub struct ATABus {
     alternate_status_register_r: PortReadOnly<u8>,
     device_control_register_w: PortWriteOnly<u8>,
     drive_address_register_r: PortReadOnly<u8>,
+
+    disk_1_descriptor: Option<DiskDescriptor>,
+    disk_2_descriptor: Option<DiskDescriptor>,
 }
 
 impl ATABus {
@@ -45,6 +49,8 @@ impl ATABus {
             alternate_status_register_r: PortReadOnly::new(base_port + 0x206),
             device_control_register_w: PortWriteOnly::new(base_port + 0x206),
             drive_address_register_r: PortReadOnly::new(base_port + 0x207),
+            disk_1_descriptor: None,
+            disk_2_descriptor: None,
         }
     }
 
@@ -52,30 +58,34 @@ impl ATABus {
         self.status_register_r.read() != 0xFF
     }
 
-    pub unsafe fn wait_for(&mut self, flag: u8, should_be_on: bool) -> Result<(), u8> {
-        let condition = if should_be_on { flag } else { 0 };
+    pub unsafe fn wait_for(
+        &mut self,
+        flag: StatusRegisterFlags,
+        should_be_on: bool,
+    ) -> Result<(), ErrorRegisterFlags> {
+        let condition = if should_be_on { flag as u8 } else { 0 };
         loop {
             let status = self.status_register_r.read();
-            if status & flag == condition {
+            if status & flag as u8 == condition {
                 break;
             }
-            if status & status_register_flags::ERR != 0 {
+            if status & StatusRegisterFlags::ERR as u8 != 0 {
                 let error = self.error_register_r.read();
                 if error != 0 {
-                    return Err(error);
+                    return Err(get_error_flag(error));
                 }
             }
         }
         Ok(())
     }
 
-    pub unsafe fn wait_400ns(&mut self) -> Result<(), u8> {
+    pub unsafe fn wait_400ns(&mut self) -> Result<(), ErrorRegisterFlags> {
         for _ in 0..15 {
             let status = self.status_register_r.read();
-            if status & status_register_flags::ERR != 0 {
+            if status & StatusRegisterFlags::ERR as u8 != 0 {
                 let error = self.error_register_r.read();
                 if error != 0 {
-                    return Err(error);
+                    return Err(get_error_flag(error));
                 }
             }
         }
@@ -84,9 +94,18 @@ impl ATABus {
 }
 
 impl ATABus {
-    pub fn identify(&mut self, master: bool) -> Result<ATADescriptor, ATAIdentifyError> {
-        unsafe fn handle_identify_error(bus: &mut ATABus, error: u8) -> ATAIdentifyError {
-            if error & error_register_flags::ABRT == 0 {
+    pub(crate) fn identify(&mut self, master: bool) -> Result<DiskDescriptor, ATAIdentifyError> {
+        if master && self.disk_1_descriptor.is_some() {
+            return Ok(self.disk_1_descriptor.as_ref().unwrap().clone());
+        }
+        if !master && self.disk_2_descriptor.is_some() {
+            return Ok(self.disk_2_descriptor.as_ref().unwrap().clone());
+        }
+        unsafe fn handle_identify_error(
+            bus: &mut ATABus,
+            error: ErrorRegisterFlags,
+        ) -> ATAIdentifyError {
+            if error != ErrorRegisterFlags::ABRT {
                 return ATAIdentifyError::DeviceIsATAPI;
             }
             let mid = bus.lba_mid_register_rw.read();
@@ -104,7 +123,7 @@ impl ATABus {
             if !self.connected() {
                 return Err(ATAIdentifyError::BusNotConnected);
             }
-            if let Err(_) = self.wait_for(status_register_flags::BSY, false) {
+            if let Err(_) = self.wait_for(StatusRegisterFlags::BSY, false) {
                 return Err(ATAIdentifyError::Unknown);
             }
             without_interrupts(|| {
@@ -123,21 +142,31 @@ impl ATABus {
                 if status == 0 {
                     return Err(ATAIdentifyError::NoDevice);
                 }
-                if let Err(error) = self.wait_for(status_register_flags::BSY, false) {
+                if let Err(error) = self.wait_for(StatusRegisterFlags::BSY, false) {
                     return Err(handle_identify_error(self, error));
                 }
-                if let Err(error) = self.wait_for(status_register_flags::DRQ, true) {
+                if let Err(error) = self.wait_for(StatusRegisterFlags::DRQ, true) {
                     return Err(handle_identify_error(self, error));
                 }
                 let mut identify_buffer: [u16; 256] = [0; 256];
                 self.data_register_rw.read_to_buffer(&mut identify_buffer);
-
-                Ok(ATADescriptor::new(identify_buffer))
+                let descriptor = DiskDescriptor::new(identify_buffer);
+                if master {
+                    self.disk_1_descriptor = Some(descriptor);
+                    Ok(self.disk_1_descriptor.as_ref().unwrap().clone())
+                } else {
+                    self.disk_2_descriptor = Some(descriptor);
+                    Ok(self.disk_2_descriptor.as_ref().unwrap().clone())
+                }
             })
         }
     }
 
-    pub fn read_sector(&mut self, master: bool, lba: u64) -> Result<[u8; 512], u8> {
+    pub(crate) fn read_sector(
+        &mut self,
+        master: bool,
+        lba: u64,
+    ) -> Result<[u8; 512], ErrorRegisterFlags> {
         if lba > u32::MAX.into() {
             todo!("LBA48 not supported");
         }
@@ -152,8 +181,8 @@ impl ATABus {
             self.lba_high_register_rw.write((lba >> 16) as u8);
             self.command_register_w
                 .write(ATACommands::ReadSectors as u8);
-            self.wait_for(status_register_flags::BSY, false)?;
-            self.wait_for(status_register_flags::DRQ, true)?;
+            self.wait_for(StatusRegisterFlags::BSY, false)?;
+            self.wait_for(StatusRegisterFlags::DRQ, true)?;
             let mut buffer = [0u8; 512];
             self.data_register_rw.read_to_buffer(&mut buffer);
             self.wait_400ns()?;
@@ -161,7 +190,12 @@ impl ATABus {
         }
     }
 
-    pub fn write_sector(&mut self, master: bool, lba: u64, buffer: &[u8; 512]) -> Result<(), u8> {
+    pub(crate) fn write_sector(
+        &mut self,
+        master: bool,
+        lba: u64,
+        buffer: &[u8; 512],
+    ) -> Result<(), ErrorRegisterFlags> {
         if lba > u32::MAX.into() {
             todo!("LBA48 not supported");
         }
@@ -176,22 +210,24 @@ impl ATABus {
             self.lba_high_register_rw.write((lba >> 16) as u8);
             self.command_register_w
                 .write(ATACommands::WriteSectors as u8);
-            self.wait_for(status_register_flags::BSY, false)?;
-            self.wait_for(status_register_flags::DRQ, true)?;
+            self.wait_for(StatusRegisterFlags::BSY, false)?;
+            self.wait_for(StatusRegisterFlags::DRQ, true)?;
             self.data_register_rw.write_from_buffer(buffer);
             self.wait_400ns()?;
-            self.wait_for(status_register_flags::DRQ, false)?;
-            self.wait_for(status_register_flags::BSY, false)?;
+            self.wait_for(StatusRegisterFlags::DRQ, false)?;
+            self.wait_for(StatusRegisterFlags::BSY, false)?;
             self.command_register_w.write(ATACommands::CacheFlush as u8);
-            self.wait_for(status_register_flags::BSY, false)?;
+            self.wait_for(StatusRegisterFlags::BSY, false)?;
             Ok(())
         }
     }
 
-    pub fn get_partitions(&mut self, master: bool) -> Result<Vec<Partition>, u8> {
-        let mbr = self.read_sector(master, 0)?;
-        Ok(Vec::from_iter(
-            mbr[446..510].chunks(16).filter_map(Partition::from_bytes),
-        ))
+    pub fn get_disk(this: &Arc<Mutex<Self>>, master: bool) -> Result<ATADisk, ATAIdentifyError> {
+        let descriptor = this.lock().identify(master)?;
+        Ok(ATADisk {
+            bus: this.clone(),
+            descriptor,
+            master,
+        })
     }
 }
