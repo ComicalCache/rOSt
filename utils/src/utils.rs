@@ -10,15 +10,15 @@ pub mod array_combiner;
 pub mod port_extensions;
 pub mod static_stack;
 
+pub const KIBIBYTE: u64 = 1024;
+pub const MEBIBYTE: u64 = KIBIBYTE * 1024;
+pub const GIBIBYTE: u64 = MEBIBYTE * 1024;
+
 pub fn format_size(bytes: u64) -> String {
-    if bytes < 1024 {
-        return format!(" {}B", bytes);
+    match bytes {
+        b if b < KIBIBYTE => format!("{}B", b),
+        b if b < MEBIBYTE => format!("{}KiB", b / KIBIBYTE),
+        b if b < GIBIBYTE => format!("{}MiB", b / MEBIBYTE),
+        b => format!("{}GiB", b / GIBIBYTE),
     }
-    if bytes < 1024 * 1024 {
-        return format!(" {}KiB", bytes / 1024);
-    }
-    if bytes < 1024 * 1024 * 1024 {
-        return format!(" {}MiB", bytes / 1024 / 1024);
-    }
-    format!(" {}GiB", bytes / 1024 / 1024 / 1024)
 }
