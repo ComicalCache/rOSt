@@ -8,9 +8,12 @@ extern crate alloc;
 use core::panic::PanicInfo;
 
 pub use crate::interrupts::gdt;
-pub use crate::test_framework::ansi_colors;
-use crate::test_framework::qemu_exit::exit_qemu;
-use crate::test_framework::qemu_exit::QemuExitCode;
+
+use test_framework::{
+    ansi_colors,
+    qemu_exit::{exit_qemu, QemuExitCode},
+    serial_println,
+};
 
 mod init;
 pub use init::{hlt_loop, init, register_driver, reload_drivers};
@@ -18,8 +21,6 @@ mod interrupts;
 pub mod logger;
 mod memory;
 pub mod structures;
-mod test_framework;
-pub use test_framework::{serial, test_runner};
 
 #[cfg(debug_assertions)]
 mod debug;

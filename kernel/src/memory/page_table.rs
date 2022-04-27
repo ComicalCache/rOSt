@@ -62,8 +62,8 @@ impl BootInfoFrameAllocator {
             *region_index = memory_map
                 .iter()
                 .enumerate()
-                .find(|(_, val)| val.kind == MemoryRegionKind::Usable)
-                .unwrap()
+                .find(|(_, region)| region.kind == MemoryRegionKind::Usable)
+                .expect("No usable memory found")
                 .0;
         }
         BootInfoFrameAllocator { memory_map }
@@ -85,7 +85,7 @@ unsafe impl FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
                 .iter()
                 .enumerate()
                 .filter(|(i, _)| i > &region_index)
-                .find(|(_, val)| val.kind == MemoryRegionKind::Usable)
+                .find(|(_, region)| region.kind == MemoryRegionKind::Usable)
                 .map(|(i, _)| i)?;
             // Use the new region
             *next = 0;

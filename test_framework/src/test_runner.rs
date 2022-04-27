@@ -1,10 +1,9 @@
 use crate::{
+    ansi_colors::Yellow,
+    qemu_exit::{exit_qemu, QemuExitCode},
     serial_println,
-    test_framework::qemu_exit::{exit_qemu, QemuExitCode},
+    testable::Testable,
 };
-
-use super::testable::Testable;
-use crate::test_framework::ansi_colors::Yellow;
 
 /// Rusts test runner function that is called to run all annotated tests.
 #[allow(dead_code)]

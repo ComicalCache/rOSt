@@ -1,6 +1,6 @@
 use bootloader::boot_info::{MemoryRegionKind, MemoryRegions};
 
-use crate::serial_println;
+use test_framework::serial_println;
 
 pub fn print_memory_map(memory_map: &MemoryRegions) {
     serial_println!("[   ---{:^15}---   ]", "MEMORY MAP");

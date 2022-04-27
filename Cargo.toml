@@ -14,7 +14,8 @@ members = [
     "kernel",
     "drivers/ata",
     "drivers/vga",
-    "lib"
+    "lib",
+    "test_framework"
 ]
 
 [package.metadata.bootloader]

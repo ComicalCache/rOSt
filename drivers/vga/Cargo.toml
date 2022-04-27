@@ -12,7 +12,4 @@ utils = { path = "../../utils"}
 kernel = { path = "../../kernel" }
 noto-sans-mono-bitmap = "0.1.5" # nice bitmap font
 spin = "0.9.2"
-
-[dependencies.lazy_static]
-version = "1.4.0"
-features = ["spin_no_std"]
+lazy_static = { version = "1.4.0", features = [ "spin_no_std" ]}
