@@ -1,4 +1,4 @@
 /target
 **/.DS_Store
 .idea
-**/*.img
+test_disk.img

@@ -36,9 +36,3 @@ features = ["spin_no_std"]
 ###################################
 # Register all failing tests here #
 ###################################
-[[test]]
-name = "stack_overflow"
-harness = false
-[[test]]
-name = "page_fault"
-harness = false
