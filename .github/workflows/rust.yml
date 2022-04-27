@@ -25,5 +25,5 @@ jobs:
       uses: actions/upload-artifact@v3.0.0
       with:
         name: Build-Images
-        path: ./target/x86_64-custom/debug/*.img
+        path: /home/runner/work/rOSt/rOSt/target/x86_64-custom/debug/*.img
         if-no-files-found: error
