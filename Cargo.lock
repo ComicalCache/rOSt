@@ -9,6 +9,7 @@ dependencies = [
  "kernel",
  "lazy_static",
  "spin 0.9.3",
+ "test_framework",
  "utils",
  "x86_64",
 ]
@@ -71,6 +72,7 @@ dependencies = [
  "pc-keyboard",
  "pic8259",
  "spin 0.9.3",
+ "test_framework",
  "uart_16550",
  "utils",
  "x86_64",
@@ -228,6 +230,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-xid",
+]
+
+[[package]]
+name = "test_framework"
+version = "0.1.0"
+dependencies = [
+ "lazy_static",
+ "spin 0.9.3",
+ "uart_16550",
+ "x86_64",
 ]
 
 [[package]]

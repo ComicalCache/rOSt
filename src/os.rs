@@ -8,7 +8,7 @@
     core_intrinsics,
     alloc_error_handler
 )]
-#![test_runner(kernel::test_runner)]
+#![test_runner(test_framework::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 extern crate alloc;
 

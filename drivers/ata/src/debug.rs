@@ -1,4 +1,4 @@
-use kernel::serial_println;
+use test_framework::serial_println;
 use utils::format_size;
 
 use crate::{ATABus, ATADisk, ATAIdentifyError};

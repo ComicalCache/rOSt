@@ -1,4 +1,4 @@
-use crate::test_framework::ansi_colors::Green;
+use crate::ansi_colors::Green;
 use crate::{serial_print, serial_println};
 
 /// Self documenting test runner trait
