@@ -36,17 +36,17 @@ pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
     kernel::hlt_loop();
 }
 
-pub fn kernel_main(kernel_info: KernelInformation) {
+pub fn kernel_main(_: KernelInformation) {
     //let test = Box::new(4);
     //log_println!("New boxed value: {:#?}", test);
     //log_println!("im not dying :)");
     log_println!("Getting all disks...");
-    let mut disks = ata::get_all_disks();
+    let disks = ata::get_all_disks();
     log_println!("Got {} disks, taking the non-bootable one...", disks.len());
     let mut disk = disks
         .into_iter()
         .map(|mut disk| (disk.has_bootloader(), disk))
-        .find(|(boot, disk)| !boot.unwrap_or(true))
+        .find(|(boot, _)| !boot.unwrap_or(true))
         .expect("No non-bootable disk found")
         .1;
     log_println!("Got a disk, looking for partitions...");
@@ -54,7 +54,7 @@ pub fn kernel_main(kernel_info: KernelInformation) {
     if partitions.len() == 0 {
         log_println!("No partitions found, creating a new one...");
         let partition_size = disk.descriptor.lba_48_addressable_sectors as u32 / 2;
-        disk.create_partition(partition_size)
+        disk.create_partition(partition_size, 0xED)
             .expect("Error creating partition");
         log_println!("Partition created, double-checking...");
         partitions = disk.get_partitions().expect("Error getting partitions");

@@ -6,6 +6,7 @@ version = 3
 name = "ata"
 version = "0.1.0"
 dependencies = [
+ "bitflags",
  "kernel",
  "lazy_static",
  "spin 0.9.3",
@@ -86,6 +87,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "lib"
+version = "0.1.0"
+dependencies = [
+ "ata",
+ "bitflags",
+ "kernel",
+ "lazy_static",
+ "utils",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.124"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -133,6 +145,7 @@ dependencies = [
  "bootloader",
  "kernel",
  "lazy_static",
+ "lib",
  "spin 0.9.3",
  "utils",
  "vga",

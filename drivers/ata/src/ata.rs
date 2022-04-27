@@ -1,5 +1,7 @@
 #![no_std] // no standard library
 #![no_main]
+#![allow(incomplete_features)]
+#![feature(generic_const_exprs)]
 use alloc::vec::Vec;
 use kernel::structures::{driver::Driver, kernel_information::KernelInformation};
 extern crate alloc;

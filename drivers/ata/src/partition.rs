@@ -1,4 +1,4 @@
-use crate::{constants::ErrorRegisterFlags, ATADisk, PartitionDescriptor};
+use crate::{constants::ErrorRegisterFlags, ATADisk, DiskDescriptor, PartitionDescriptor};
 
 #[derive(Clone)]
 pub struct ATAPartition {
@@ -7,6 +7,10 @@ pub struct ATAPartition {
 }
 
 impl ATAPartition {
+    pub fn disk_descriptor(&self) -> DiskDescriptor {
+        self.disk.descriptor.clone()
+    }
+
     pub fn read_sector(&mut self, lba: u64) -> Result<[u8; 512], PartitionIOError> {
         if lba >= self.descriptor.sectors {
             Err(PartitionIOError::AddressNotInRange)

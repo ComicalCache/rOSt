@@ -27,7 +27,7 @@ impl DiskDescriptor {
         core::str::from_utf8(&self.model_number_bytes).unwrap()
     }
 
-    pub(crate) fn new(buffer: [u16; 256]) -> Self {
+    pub(crate) fn from_bytes(buffer: [u16; 256]) -> Self {
         let fixed_device = buffer[0] & 0x0040 != 0;
         let removable_media = buffer[0] & 0x0080 != 0;
         let is_ata_device = buffer[0] & 0x8000 != 0;

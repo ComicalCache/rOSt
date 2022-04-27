@@ -13,7 +13,8 @@ members = [
     "boot",
     "kernel",
     "drivers/ata",
-    "drivers/vga"
+    "drivers/vga",
+    "lib"
 ]
 
 [package.metadata.bootloader]
@@ -24,6 +25,7 @@ utils = { path = "utils"}
 kernel = { path = "kernel" }
 vga = { path = "drivers/vga" }
 ata = { path = "drivers/ata" }
+lib = { path = "lib" }
 bootloader = "0.10.12"
 volatile = "0.4.4" # volatile wrapper to prevent aggressive compiler optimizations
 spin = "0.9.2" # spinlock implementation
