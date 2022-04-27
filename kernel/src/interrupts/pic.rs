@@ -11,7 +11,7 @@ pub enum InterruptIndex {
     Timer = PIC_1_OFFSET,
     Keyboard,
 
-    AtaPrimary = PIC_1_OFFSET + 14,
+    AtaPrimary = PIC_2_OFFSET + 6,
     AtaSecondary,
 }
 
