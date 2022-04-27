@@ -20,6 +20,8 @@ jobs:
 
     - name: Build
       run: cargo kbuild --verbose
+      
+    - run: ls /home/runner/work/rOSt/rOSt/target/x86_64-custom/debug
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.0.0
