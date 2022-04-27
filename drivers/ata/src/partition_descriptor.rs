@@ -1,6 +1,7 @@
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct PartitionDescriptor {
     pub bootable: bool,
+    pub file_system: u8,
     pub start_lba: u64,
     pub sectors: u64,
 }
@@ -12,6 +13,7 @@ impl PartitionDescriptor {
         }
         Some(PartitionDescriptor {
             bootable: bytes[0] == 0x80,
+            file_system: bytes[4],
             start_lba: u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]) as u64,
             sectors: u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]) as u64,
         })

@@ -2,61 +2,48 @@ use alloc::sync::Arc;
 use spin::Mutex;
 
 use super::bus::ATABus;
+use bitflags::bitflags;
 use lazy_static::lazy_static;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u8)]
-pub enum StatusRegisterFlags {
-    /// Busy
-    BSY = 0x80,
-    /// Device Ready
-    DRDY = 0x40,
-    /// Device Fault
-    DF = 0x20,
-    /// Seek Complete
-    DSC = 0x10,
-    /// Data Transfer Required
-    DRQ = 0x08,
-    /// Data Corrected
-    CORR = 0x04,
-    /// Index Mark
-    IDX = 0x02,
-    /// Error
-    ERR = 0x01,
-}
+bitflags! {
+    #[repr(C)]
+    pub struct StatusRegisterFlags: u8 {
+        /// Busy
+        const BSY = 0b10000000;
+        /// Device Ready
+        const DRDY = 0b01000000;
+        /// Device Fault
+        const DF = 0b00100000;
+        /// Seek Complete
+        const DSC = 0b00010000;
+        /// Data Transfer Required
+        const DRQ = 0b00001000;
+        /// Data Corrected
+        const CORR = 0b00000100;
+        /// Index Mark
+        const IDX = 0b00000010;
+        /// Error
+        const ERR = 0b00000001;
+    }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u8)]
-pub enum ErrorRegisterFlags {
+    #[repr(C)]
+    pub struct ErrorRegisterFlags: u8 {
     /// Bad Block
-    BBK = 0x80,
+        const BBK = 0b10000000;
     /// Uncorrectable Data Error
-    UNC = 0x40,
+        const UNC = 0b10000000;
     /// Media Changed
-    MC = 0x20,
+        const MC = 0b10000000;
     /// ID Mark Not Found
-    IDNF = 0x10,
+        const IDNF = 0b10000000;
     /// Media Change Requested
-    MCR = 0x08,
+        const MCR = 0b10000000;
     /// Command Aborted
-    ABRT = 0x04,
+        const ABRT = 0b10000000;
     /// Track 0 Not Found
-    TK0NF = 0x02,
+        const TK0NF = 0b10000000;
     /// Address Mark Not Found
-    AMNF = 0x01,
-}
-
-pub(crate) fn get_error_flag(error: u8) -> ErrorRegisterFlags {
-    match error {
-        0x80 => ErrorRegisterFlags::BBK,
-        0x40 => ErrorRegisterFlags::UNC,
-        0x20 => ErrorRegisterFlags::MC,
-        0x10 => ErrorRegisterFlags::IDNF,
-        0x08 => ErrorRegisterFlags::MCR,
-        0x04 => ErrorRegisterFlags::ABRT,
-        0x02 => ErrorRegisterFlags::TK0NF,
-        0x01 => ErrorRegisterFlags::AMNF,
-        _ => ErrorRegisterFlags::UNC,
+        const AMNF = 0b10000000;
     }
 }
 
@@ -85,4 +72,3 @@ lazy_static! {
     pub static ref PRIMARY_ATA_BUS: Arc<Mutex<ATABus>> = Arc::new(Mutex::new(ATABus::new(0x1F0)));
     pub static ref SECONDARY_ATA_BUS: Arc<Mutex<ATABus>> = Arc::new(Mutex::new(ATABus::new(0x170)));
 }
-pub const PARTITION_ID: u8 = 0xED;

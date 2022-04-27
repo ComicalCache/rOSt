@@ -7,7 +7,7 @@ use x86_64::instructions::{
 };
 
 use crate::{
-    constants::{get_error_flag, ATACommands, ErrorRegisterFlags, StatusRegisterFlags},
+    constants::{ATACommands, ErrorRegisterFlags, StatusRegisterFlags},
     ATADisk,
 };
 
@@ -63,16 +63,20 @@ impl ATABus {
         flag: StatusRegisterFlags,
         should_be_on: bool,
     ) -> Result<(), ErrorRegisterFlags> {
-        let condition = if should_be_on { flag as u8 } else { 0 };
+        let condition = if should_be_on {
+            flag
+        } else {
+            StatusRegisterFlags::empty()
+        };
         loop {
-            let status = self.status_register_r.read();
-            if status & flag as u8 == condition {
+            let status = StatusRegisterFlags::from_bits_unchecked(self.status_register_r.read());
+            if status.intersection(flag) == condition {
                 break;
             }
-            if status & StatusRegisterFlags::ERR as u8 != 0 {
+            if status.contains(StatusRegisterFlags::ERR) {
                 let error = self.error_register_r.read();
                 if error != 0 {
-                    return Err(get_error_flag(error));
+                    return Err(ErrorRegisterFlags::from_bits_unchecked(error));
                 }
             }
         }
@@ -81,11 +85,11 @@ impl ATABus {
 
     pub unsafe fn wait_400ns(&mut self) -> Result<(), ErrorRegisterFlags> {
         for _ in 0..15 {
-            let status = self.status_register_r.read();
-            if status & StatusRegisterFlags::ERR as u8 != 0 {
+            let status = StatusRegisterFlags::from_bits_unchecked(self.status_register_r.read());
+            if status.contains(StatusRegisterFlags::ERR) {
                 let error = self.error_register_r.read();
                 if error != 0 {
-                    return Err(get_error_flag(error));
+                    return Err(ErrorRegisterFlags::from_bits_unchecked(error));
                 }
             }
         }
@@ -150,7 +154,7 @@ impl ATABus {
                 }
                 let mut identify_buffer: [u16; 256] = [0; 256];
                 self.data_register_rw.read_to_buffer(&mut identify_buffer);
-                let descriptor = DiskDescriptor::new(identify_buffer);
+                let descriptor = DiskDescriptor::from_bytes(identify_buffer);
                 if master {
                     self.disk_1_descriptor = Some(descriptor);
                     Ok(self.disk_1_descriptor.as_ref().unwrap().clone())

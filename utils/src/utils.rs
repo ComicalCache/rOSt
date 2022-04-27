@@ -7,6 +7,7 @@ use alloc::{format, string::String};
 
 extern crate alloc;
 pub mod array_combiner;
+pub mod byte_reader;
 pub mod port_extensions;
 pub mod static_stack;
 

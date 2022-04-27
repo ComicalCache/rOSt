@@ -3,8 +3,8 @@ use spin::Mutex;
 use utils::array_combiner::Combiner;
 
 use crate::{
-    constants::{ErrorRegisterFlags, PARTITION_ID},
-    ATABus, ATAPartition, DiskDescriptor, PartitionDescriptor, PartitionIOError,
+    constants::ErrorRegisterFlags, ATABus, ATAPartition, DiskDescriptor, PartitionDescriptor,
+    PartitionIOError,
 };
 
 #[derive(Clone)]
@@ -47,7 +47,11 @@ impl ATADisk {
         Ok(partitions)
     }
 
-    pub fn create_partition(&mut self, sectors: u32) -> Result<ATAPartition, PartitionIOError> {
+    pub fn create_partition(
+        &mut self,
+        sectors: u32,
+        partition_type: u8,
+    ) -> Result<ATAPartition, PartitionIOError> {
         let mut mbr = self
             .read_sector(0)
             .map_err(|err| PartitionIOError::ATAError(err))?;
@@ -73,7 +77,7 @@ impl ATADisk {
 
         let partition_bytes = Combiner::new()
             .with(&[0x00, 0xFF, 0xFF, 0xFF])
-            .with(&[PARTITION_ID, 0xFF, 0xFF, 0xFF])
+            .with(&[partition_type, 0xFF, 0xFF, 0xFF])
             .with(&start_sector_bytes)
             .with(&sectors_bytes)
             .build::<16>()
