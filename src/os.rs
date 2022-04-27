@@ -36,7 +36,7 @@ pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
     kernel::hlt_loop();
 }
 
-pub fn kernel_main(kernel_info: KernelInformation) {
+pub fn kernel_main(#[allow(unused_variables)] kernel_info: KernelInformation) {
     //let test = Box::new(4);
     //log_println!("New boxed value: {:#?}", test);
     //log_println!("im not dying :)");
