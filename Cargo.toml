@@ -31,10 +31,7 @@ bootloader = "0.10.12"
 volatile = "0.4.4" # volatile wrapper to prevent aggressive compiler optimizations
 spin = "0.9.2" # spinlock implementation
 x86_64 = "0.14.9" # configures the serial port, cpu exception table
-
-[dependencies.lazy_static]
-version = "1.4.0"
-features = ["spin_no_std"]
+lazy_static = { version = "1.4.0", features = [ "spin_no_std" ]}
 
 ###################################
 # Register all failing tests here #
