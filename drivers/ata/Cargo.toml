@@ -12,7 +12,4 @@ utils = { path = "../../utils"}
 kernel = { path = "../../kernel" }
 x86_64 = "0.14.9"
 spin = "0.9.2"
-
-[dependencies.lazy_static]
-version = "1.4.0"
-features = ["spin_no_std"]
+lazy_static = { version = "1.4.0", features = [ "spin_no_std" ]}

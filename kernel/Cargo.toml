@@ -16,7 +16,4 @@ uart_16550 = "0.2.17" # serial port interface used for sending debug output to t
 pic8259 = "0.10.2" # interrupt controller
 pc-keyboard = "0.5.1" # keyboard scan code converter
 linked_list_allocator = "0.9.1" # allocator implementation
-
-[dependencies.lazy_static]
-version = "1.4.0"
-features = ["spin_no_std"]
+lazy_static = { version = "1.4.0", features = [ "spin_no_std" ]}
