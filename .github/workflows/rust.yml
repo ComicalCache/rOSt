@@ -21,7 +21,7 @@ jobs:
       with:
           toolchain: nightly
           override: true
-          components: llvm-tools-preview
+          components: llvm-tools-preview, rust-src
 
     - name: Build Images
       run: cargo kimage --verbose
