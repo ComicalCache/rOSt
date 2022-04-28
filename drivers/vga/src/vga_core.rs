@@ -1,5 +1,6 @@
 use lazy_static::lazy_static;
 use noto_sans_mono_bitmap::{get_bitmap, get_bitmap_width, BitmapChar, BitmapHeight, FontWeight};
+use tinytga::RawTga;
 
 use super::{point_2d::Point2D, vga_color::VGAColor};
 
@@ -46,4 +47,9 @@ pub trait TextDrawable {
         reset_x: u16,
     ) -> (u16, u16);
     fn measure_string(&self, x: u16, y: u16, text: &str, reset_x: u16) -> (u16, u16);
+}
+
+pub trait ImageDrawable {
+    fn draw_image(&mut self, x: u16, y: u16, image: &RawTga);
+    fn draw_image_p(&mut self, p: Point2D<u16>, image: &RawTga);
 }

@@ -43,11 +43,11 @@ fn main() {
         .args(["-serial", "stdio"])
         .args(["-m", "256"])
         .args(["-hda", &bios.display().to_string()])
-        .args(["-drive", "if=none,id=disk,file=test_disk.img"])
+        /*.args(["-drive", "if=none,id=disk,file=test_disk.img"])
         .args([
             "-device",
             "ide-hd,drive=disk,bus=ide.1,serial=11cebfc108002be10318,model=INTEL SSDSC2BW120A4",
-        ]);
+        ])*/;
 
     let binary_kind = runner_utils::binary_kind(&kernel_binary_path);
     if binary_kind.is_test() {
