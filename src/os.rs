@@ -8,14 +8,16 @@
     core_intrinsics,
     alloc_error_handler
 )]
-#![test_runner(test_framework::test_runner)]
+#![test_runner(test_framework::test_runner::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 extern crate alloc;
 
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 use kernel::structures::kernel_information::KernelInformation;
+use tinytga::RawTga;
 use utils::format_size;
+use vga::vga_core::{Clearable, ImageDrawable};
 
 use core::alloc::Layout;
 
@@ -24,9 +26,7 @@ use kernel::log_println;
 entry_point!(kernel);
 pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
     let kernel_info = kernel::init(boot_info);
-    kernel::register_driver(vga::driver_init);
-    kernel::register_driver(ata::driver_init);
-    kernel::reload_drivers(kernel_info);
+    bootup_sequence(kernel_info);
 
     #[cfg(test)]
     kernel_test(kernel_info);
@@ -36,7 +36,24 @@ pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
     kernel::hlt_loop();
 }
 
+fn bootup_sequence(kernel_info: KernelInformation) {
+    kernel::register_driver(vga::driver_init);
+    kernel::register_driver(ata::driver_init);
+    kernel::reload_drivers(kernel_info);
+    let data = include_bytes!("./assets/rost-logo.tga");
+    let logo = RawTga::from_slice(data).unwrap();
+    let logo_header = logo.header();
+    let mut vga_device = vga::vga_buffer::VGADeviceFactory::from_kernel_info(kernel_info);
+    vga_device.clear(vga::vga_color::BLACK);
+    vga_device.draw_image(
+        (vga_device.width as u16 - logo_header.width) / 2,
+        (vga_device.height as u16 - logo_header.height) / 2,
+        &logo,
+    );
+}
+
 pub fn kernel_main(#[allow(unused_variables)] kernel_info: KernelInformation) {
+    return;
     //let test = Box::new(4);
     //log_println!("New boxed value: {:#?}", test);
     //log_println!("im not dying :)");

@@ -27,10 +27,12 @@ kernel = { path = "kernel" }
 vga = { path = "drivers/vga" }
 ata = { path = "drivers/ata" }
 lib = { path = "lib" }
+test_framework = { path = "test_framework" }
 bootloader = "0.10.12"
 volatile = "0.4.4" # volatile wrapper to prevent aggressive compiler optimizations
 spin = "0.9.2" # spinlock implementation
 x86_64 = "0.14.9" # configures the serial port, cpu exception table
+tinytga = "0.4.1" # for loading the OS logo
 lazy_static = { version = "1.4.0", features = [ "spin_no_std" ]}
 
 ###################################
