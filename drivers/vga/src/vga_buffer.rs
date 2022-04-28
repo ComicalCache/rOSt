@@ -1,9 +1,10 @@
 use alloc::slice;
 use kernel::structures::kernel_information::{KernelInformation, PixelFormat};
 use noto_sans_mono_bitmap::{get_bitmap, BitmapChar};
-use utils::static_stack::StaticStack;
+use tinytga::RawTga;
+use utils::{div_255_fast, static_stack::StaticStack};
 
-use crate::vga_core::{CHAR_HEIGHT, INVALID_CHAR};
+use crate::vga_core::{ImageDrawable, CHAR_HEIGHT, INVALID_CHAR};
 
 use super::{
     point_2d::Point2D,
@@ -12,12 +13,12 @@ use super::{
 };
 
 pub struct VGADevice {
-    width: usize,
-    height: usize,
+    pub width: usize,
+    pub height: usize,
     pixel_format: PixelFormat,
     frame_pointer: &'static mut [u8],
-    bytes_per_row: usize,
-    bytes_per_pixel: usize,
+    stride: usize,
+    bytes_per_pixel_shift: u8,
 }
 
 impl Clearable for VGADevice {
@@ -34,38 +35,40 @@ impl PlainDrawable for VGADevice {
     fn draw_point(&mut self, x: u16, y: u16, color: VGAColor<u8>) {
         let x = x as usize;
         let y = y as usize;
-        let index = y * self.bytes_per_row + x * self.bytes_per_pixel;
+        let index = (y * self.stride) + x << self.bytes_per_pixel_shift;
         match self.pixel_format {
             PixelFormat::RGB => {
                 let frame_color = VGAColor {
                     red: self.frame_pointer[index + 0],
                     green: self.frame_pointer[index + 1],
                     blue: self.frame_pointer[index + 2],
-                    alpha: 255,
+                    alpha: self.frame_pointer[index + 3],
                 };
                 let result_color = VGAColor::interpolate(frame_color, color, color.alpha);
                 self.frame_pointer[index + 0] = result_color.red;
                 self.frame_pointer[index + 1] = result_color.green;
                 self.frame_pointer[index + 2] = result_color.blue;
+                self.frame_pointer[index + 3] = result_color.alpha;
             }
             PixelFormat::BGR => {
                 let frame_color = VGAColor {
                     red: self.frame_pointer[index + 2],
                     green: self.frame_pointer[index + 1],
                     blue: self.frame_pointer[index + 0],
-                    alpha: 255,
+                    alpha: self.frame_pointer[index + 3],
                 };
                 let result_color = VGAColor::interpolate(frame_color, color, color.alpha);
                 self.frame_pointer[index + 2] = result_color.red;
                 self.frame_pointer[index + 1] = result_color.green;
                 self.frame_pointer[index + 0] = result_color.blue;
+                self.frame_pointer[index + 3] = result_color.alpha;
             }
             PixelFormat::U8 => {
                 let gray = self.frame_pointer[index] as u16;
                 let color_gray = color.to_grayscale() as u16;
                 let alpha = color.alpha as u16;
                 let alpha1 = 255 - alpha;
-                self.frame_pointer[index] = ((gray * alpha1 + color_gray * alpha) / 255) as u8;
+                self.frame_pointer[index] = div_255_fast(gray * alpha1 + color_gray * alpha);
             }
         }
     }
@@ -270,6 +273,24 @@ impl TextDrawable for VGADevice {
     }
 }
 
+impl ImageDrawable for VGADevice {
+    fn draw_image(&mut self, x0: u16, y0: u16, image: &RawTga) {
+        for pixel in image.pixels() {
+            let pos = pixel.position;
+            let color = VGAColor::<u8> {
+                red: (pixel.color >> 16) as u8,
+                green: (pixel.color >> 8) as u8,
+                blue: pixel.color as u8,
+                alpha: 255,
+            };
+            self.draw_point(pos.x as u16 + x0, pos.y as u16 + y0, color);
+        }
+    }
+    fn draw_image_p(&mut self, pos: Point2D<u16>, image: &RawTga) {
+        self.draw_image(pos.x, pos.y, image);
+    }
+}
+
 impl VGADevice {
     fn draw_char(&mut self, x: u16, y: u16, char: &BitmapChar, color: VGAColor<u8>) {
         for (iy, row) in char.bitmap().iter().enumerate() {
@@ -289,8 +310,8 @@ impl VGADeviceFactory {
             width: buffer.width,
             height: buffer.height,
             pixel_format: buffer.format,
-            bytes_per_row: buffer.bytes_per_pixel * buffer.stride,
-            bytes_per_pixel: buffer.bytes_per_pixel,
+            stride: buffer.stride,
+            bytes_per_pixel_shift: log2(buffer.bytes_per_pixel),
             frame_pointer: unsafe {
                 slice::from_raw_parts_mut::<u8>(
                     buffer.buffer,
@@ -298,5 +319,15 @@ impl VGADeviceFactory {
                 )
             },
         }
+    }
+}
+
+fn log2(value: usize) -> u8 {
+    match value {
+        1 => 0,
+        2 => 1,
+        3 => 2,
+        4 => 2,
+        _ => todo!("log2 needs more values"),
     }
 }

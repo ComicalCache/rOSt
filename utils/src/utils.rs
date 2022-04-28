@@ -23,3 +23,8 @@ pub fn format_size(bytes: u64) -> String {
         b => format!("{}GiB", b / GIBIBYTE),
     }
 }
+
+#[inline(always)]
+pub fn div_255_fast(x: u16) -> u8 {
+    (((x) + (((x) + 257) >> 8)) >> 8) as u8
+}
