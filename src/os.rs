@@ -88,6 +88,15 @@ pub fn kernel_main(#[allow(unused_variables)] kernel_info: KernelInformation) {
             partition.descriptor.start_lba
         )
     }
+
+    log_println!("-------------------");
+    log_println!("Getting file system partitions");
+    for (i, p) in lib::ext2::operations::get_file_system_partitions()
+        .iter()
+        .enumerate()
+    {
+        log_println!("{}: {:}", i, utils::format_size(p.descriptor.sectors * 512));
+    }
 }
 
 /// Panic handler for the OS.
