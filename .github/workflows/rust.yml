@@ -15,8 +15,13 @@ jobs:
     steps:
 
     - uses: actions/checkout@v3
-    
-    - run: rustup toolchain install nightly && rustup override set nightly && rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu && rustup component add llvm-tools-preview
+
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: nightly
+          override: true
+          components: llvm-tools-preview
 
     - name: Build Images
       run: cargo kimage --verbose
