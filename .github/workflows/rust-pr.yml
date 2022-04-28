@@ -1,0 +1,26 @@
+name: Build the project
+
+on:
+  pull_request:
+    branches:
+      - "master"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+          components: llvm-tools-preview, rust-src
+
+      - name: Build
+        run: cargo kbuild --verbose
