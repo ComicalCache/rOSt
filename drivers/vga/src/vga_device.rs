@@ -1,10 +1,13 @@
-use alloc::slice;
+use alloc::{boxed::Box, slice};
 use kernel::structures::kernel_information::{KernelInformation, PixelFormat};
 use noto_sans_mono_bitmap::{get_bitmap, BitmapChar};
 use tinytga::RawTga;
-use utils::{div_255_fast, static_stack::StaticStack};
+use utils::static_stack::StaticStack;
 
-use crate::vga_core::{ImageDrawable, CHAR_HEIGHT, INVALID_CHAR};
+use crate::{
+    pixel_buffer::{BasePixelBuffer, PixelBuffer},
+    vga_core::{ImageDrawable, CHAR_HEIGHT, INVALID_CHAR},
+};
 
 use super::{
     point_2d::Point2D,
@@ -15,10 +18,8 @@ use super::{
 pub struct VGADevice {
     pub width: usize,
     pub height: usize,
-    pixel_format: PixelFormat,
-    frame_pointer: &'static mut [u8],
-    stride: usize,
-    bytes_per_pixel_shift: u8,
+    pub stride: usize,
+    pixel_buffer: Box<dyn PixelBuffer>,
 }
 
 impl Clearable for VGADevice {
@@ -32,45 +33,12 @@ impl Clearable for VGADevice {
 }
 
 impl PlainDrawable for VGADevice {
+    #[inline(always)]
     fn draw_point(&mut self, x: u16, y: u16, color: VGAColor<u8>) {
         let x = x as usize;
         let y = y as usize;
-        let index = (y * self.stride) + x << self.bytes_per_pixel_shift;
-        match self.pixel_format {
-            PixelFormat::RGB => {
-                let frame_color = VGAColor {
-                    red: self.frame_pointer[index + 0],
-                    green: self.frame_pointer[index + 1],
-                    blue: self.frame_pointer[index + 2],
-                    alpha: self.frame_pointer[index + 3],
-                };
-                let result_color = VGAColor::interpolate(frame_color, color, color.alpha);
-                self.frame_pointer[index + 0] = result_color.red;
-                self.frame_pointer[index + 1] = result_color.green;
-                self.frame_pointer[index + 2] = result_color.blue;
-                self.frame_pointer[index + 3] = result_color.alpha;
-            }
-            PixelFormat::BGR => {
-                let frame_color = VGAColor {
-                    red: self.frame_pointer[index + 2],
-                    green: self.frame_pointer[index + 1],
-                    blue: self.frame_pointer[index + 0],
-                    alpha: self.frame_pointer[index + 3],
-                };
-                let result_color = VGAColor::interpolate(frame_color, color, color.alpha);
-                self.frame_pointer[index + 2] = result_color.red;
-                self.frame_pointer[index + 1] = result_color.green;
-                self.frame_pointer[index + 0] = result_color.blue;
-                self.frame_pointer[index + 3] = result_color.alpha;
-            }
-            PixelFormat::U8 => {
-                let gray = self.frame_pointer[index] as u16;
-                let color_gray = color.to_grayscale() as u16;
-                let alpha = color.alpha as u16;
-                let alpha1 = 255 - alpha;
-                self.frame_pointer[index] = div_255_fast(gray * alpha1 + color_gray * alpha);
-            }
-        }
+        let index = (y * self.stride) + x;
+        self.pixel_buffer.put_pixel(index, color);
     }
     fn draw_point_p(&mut self, p: Point2D<u16>, color: VGAColor<u8>) {
         self.draw_point(p.x, p.y, color);
@@ -309,14 +277,35 @@ impl VGADeviceFactory {
         VGADevice {
             width: buffer.width,
             height: buffer.height,
-            pixel_format: buffer.format,
             stride: buffer.stride,
-            bytes_per_pixel_shift: log2(buffer.bytes_per_pixel),
-            frame_pointer: unsafe {
-                slice::from_raw_parts_mut::<u8>(
-                    buffer.buffer,
-                    buffer.bytes_per_pixel * buffer.stride * buffer.height,
-                )
+            pixel_buffer: match buffer.format {
+                PixelFormat::RGB => Box::new(BasePixelBuffer::<{ PixelFormat::RGB }> {
+                    bytes_per_pixel_shift: log2(buffer.bytes_per_pixel),
+                    frame_pointer: unsafe {
+                        slice::from_raw_parts_mut::<u8>(
+                            buffer.buffer,
+                            buffer.bytes_per_pixel * buffer.stride * buffer.height,
+                        )
+                    },
+                }),
+                PixelFormat::BGR => Box::new(BasePixelBuffer::<{ PixelFormat::BGR }> {
+                    bytes_per_pixel_shift: log2(buffer.bytes_per_pixel),
+                    frame_pointer: unsafe {
+                        slice::from_raw_parts_mut::<u8>(
+                            buffer.buffer,
+                            buffer.bytes_per_pixel * buffer.stride * buffer.height,
+                        )
+                    },
+                }),
+                PixelFormat::U8 => Box::new(BasePixelBuffer::<{ PixelFormat::U8 }> {
+                    bytes_per_pixel_shift: log2(buffer.bytes_per_pixel),
+                    frame_pointer: unsafe {
+                        slice::from_raw_parts_mut::<u8>(
+                            buffer.buffer,
+                            buffer.bytes_per_pixel * buffer.stride * buffer.height,
+                        )
+                    },
+                }),
             },
         }
     }

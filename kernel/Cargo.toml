@@ -1,20 +1,18 @@
+cargo-features = ["workspace-inheritance"]
+
 [package]
 name = "kernel"
 version = "0.1.0"
-edition = "2021"
-
-[lib]
-name = "kernel"
-path = "src/kernel.rs"
+edition = { workspace=true }
 
 [dependencies]
-utils = { path = "../utils"}
-test_framework = { path = "../test_framework"}
-bootloader = "0.10.12"
-spin = "0.9.2" # spinlock implementation
-x86_64 = "0.14.9" # configures the serial port, cpu exception table
-uart_16550 = "0.2.18" # serial port interface used for sending debug output to the host
-pic8259 = "0.10.2" # interrupt controller
-pc-keyboard = "0.5.1" # keyboard scan code converter
-linked_list_allocator = "0.9.1" # allocator implementation
-lazy_static = { version = "1.4.0", features = [ "spin_no_std" ]}
+utils = { workspace=true }
+test_framework = { workspace=true }
+bootloader = { workspace=true }
+spin = { workspace=true }
+x86_64 = { workspace=true }
+uart_16550 = { workspace=true }
+pic8259 = { workspace=true }
+pc-keyboard = { workspace=true }
+linked_list_allocator = { workspace=true }
+lazy_static = { workspace=true }

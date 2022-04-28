@@ -43,7 +43,7 @@ fn bootup_sequence(kernel_info: KernelInformation) {
     let data = include_bytes!("./assets/rost-logo.tga");
     let logo = RawTga::from_slice(data).unwrap();
     let logo_header = logo.header();
-    let mut vga_device = vga::vga_buffer::VGADeviceFactory::from_kernel_info(kernel_info);
+    let mut vga_device = vga::vga_device::VGADeviceFactory::from_kernel_info(kernel_info);
     vga_device.clear(vga::vga_color::BLACK);
     vga_device.draw_image(
         (vga_device.width as u16 - logo_header.width) / 2,

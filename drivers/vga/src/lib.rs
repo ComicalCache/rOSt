@@ -1,20 +1,22 @@
 #![no_std] // no standard library
 #![no_main]
-#![feature(ptr_const_cast)]
+#![allow(incomplete_features)]
+#![feature(ptr_const_cast, generic_const_exprs, adt_const_params)]
 use alloc::boxed::Box;
 use core::fmt;
 use kernel::{
     logger::Logger,
     structures::{driver::Driver, kernel_information::KernelInformation},
 };
-use vga_buffer::{VGADevice, VGADeviceFactory};
 use vga_core::{Clearable, TextDrawable, CHAR_HEIGHT};
+use vga_device::{VGADevice, VGADeviceFactory};
 extern crate alloc;
 
+mod pixel_buffer;
 pub mod point_2d;
-pub mod vga_buffer;
 pub mod vga_color;
 pub mod vga_core;
+pub mod vga_device;
 
 struct VGALogger {
     x: u16,

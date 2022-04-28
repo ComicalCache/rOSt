@@ -1,14 +1,12 @@
+cargo-features = ["workspace-inheritance"]
+
 [package]
 name = "test_framework"
 version = "0.1.0"
-edition = "2021"
-
-[lib]
-name = "test_framework"
-path = "src/test_framework.rs"
+edition = { workspace=true }
 
 [dependencies]
-x86_64 = "0.14.9"
-spin = "0.9.3"
-uart_16550 = "0.2.18"
-lazy_static = { version = "1.4.0", features = [ "spin_no_std" ]}
+x86_64 = { workspace=true }
+spin = { workspace=true }
+uart_16550 = { workspace=true }
+lazy_static = { workspace=true }
