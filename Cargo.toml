@@ -18,6 +18,12 @@ test_framework = { workspace=true }
 bootloader = { workspace=true }
 tinytga = { workspace=true }
 
+
+[profile.release]
+lto = true
+codegen-units = 1
+incremental = false
+
 [workspace]
 members = [
     "utils",
