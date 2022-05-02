@@ -1,14 +1,14 @@
 #![no_std] // no standard library
 #![no_main]
 #![allow(incomplete_features)]
-#![feature(abi_x86_interrupt, generic_const_exprs, core_intrinsics)]
+#![feature(abi_x86_interrupt, generic_const_exprs, core_intrinsics, asm_const)]
 
 extern crate alloc;
 
+use alloc::{boxed::Box, sync::Arc};
 use core::panic::PanicInfo;
-
-pub use crate::interrupts::gdt;
-
+use lazy_static::lazy_static;
+use spin::Mutex;
 use test_framework::{
     ansi_colors,
     qemu_exit::{exit_qemu, QemuExitCode},
@@ -16,8 +16,12 @@ use test_framework::{
 };
 
 mod init;
-pub use init::{hlt_loop, init, register_driver, reload_drivers};
+pub use init::{hlt_loop, init, register_driver, register_syscall, reload_drivers};
+
+use crate::logger::Logger;
+
 mod interrupts;
+pub use interrupts::run_in_user_mode;
 pub mod logger;
 mod memory;
 pub mod structures;
@@ -25,9 +29,20 @@ pub mod structures;
 #[cfg(debug_assertions)]
 mod debug;
 
+lazy_static! {
+    pub static ref LOGGER: Arc<Mutex<Option<Box<dyn Logger>>>> = Arc::from(Mutex::new(None));
+}
+
+/// Function called when a panic occurs
+pub fn panic_handler(info: &PanicInfo) -> ! {
+    serial_println!("{}\n", ansi_colors::Red("[PANIC]"));
+    serial_println!("Error: {}\n", info);
+    init::hlt_loop();
+}
+
 /// Function called when a panic while testing occurs
 pub fn test_panic_handler(info: &PanicInfo) -> ! {
-    serial_println!("{}\n", ansi_colors::Red("[failed]"));
+    serial_println!("{}\n", ansi_colors::Red("[PANIC]"));
     serial_println!("Error: {}\n", info);
     exit_qemu(QemuExitCode::Failed);
 

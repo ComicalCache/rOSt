@@ -13,15 +13,12 @@
 extern crate alloc;
 
 use bootloader::{entry_point, BootInfo};
-use core::panic::PanicInfo;
+use core::{arch::asm, panic::PanicInfo};
 use kernel::structures::kernel_information::KernelInformation;
 use tinytga::RawTga;
-use utils::format_size;
 use vga::vga_core::{Clearable, ImageDrawable};
 
 use core::alloc::Layout;
-
-use kernel::log_println;
 
 entry_point!(kernel);
 pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
@@ -52,50 +49,63 @@ fn bootup_sequence(kernel_info: KernelInformation) {
     );
 }
 
+#[no_mangle]
+extern "C" fn user_mode_check() {
+    unsafe {
+        asm!("syscall");
+    }
+    loop {}
+}
+
 pub fn kernel_main(#[allow(unused_variables)] kernel_info: KernelInformation) {
-    return;
-    //let test = Box::new(4);
-    //log_println!("New boxed value: {:#?}", test);
-    //log_println!("im not dying :)");
-    log_println!("Getting all disks...");
-    let disks = ata::get_all_disks();
-    log_println!("Got {} disks, taking the non-bootable one...", disks.len());
-    let mut disk = disks
-        .into_iter()
-        .map(|mut disk| (disk.has_bootloader(), disk))
-        .find(|(boot, _)| !boot.unwrap_or(true))
-        .expect("No non-bootable disk found")
-        .1;
-    log_println!("Got a disk, looking for partitions...");
-    let mut partitions = disk.get_partitions().expect("Error getting partitions");
-    if partitions.len() == 0 {
-        log_println!("No partitions found, creating a new one...");
-        let partition_size = disk.descriptor.lba_48_addressable_sectors as u32 / 2;
-        disk.create_partition(partition_size, 0xED)
-            .expect("Error creating partition");
-        log_println!("Partition created, double-checking...");
-        partitions = disk.get_partitions().expect("Error getting partitions");
+    unsafe {
+        kernel::run_in_user_mode(user_mode_check, kernel_info);
+    }
+    /*
+        let test = Box::new(4);
+        log_println!("New boxed value: {:#?}", test);
+        log_println!("im not dying :)");
+    */
+    /*
+        log_println!("Getting all disks...");
+        let disks = ata::get_all_disks();
+        log_println!("Got {} disks, taking the non-bootable one...", disks.len());
+        let mut disk = disks
+            .into_iter()
+            .map(|mut disk| (disk.has_bootloader(), disk))
+            .find(|(boot, _)| !boot.unwrap_or(true))
+            .expect("No non-bootable disk found")
+            .1;
+        log_println!("Got a disk, looking for partitions...");
+        let mut partitions = disk.get_partitions().expect("Error getting partitions");
         if partitions.len() == 0 {
-            log_println!("No partitions found, giving up.");
-            return;
+            log_println!("No partitions found, creating a new one...");
+            let partition_size = disk.descriptor.lba_48_addressable_sectors as u32 / 2;
+            disk.create_partition(partition_size, 0xED)
+                .expect("Error creating partition");
+            log_println!("Partition created, double-checking...");
+            partitions = disk.get_partitions().expect("Error getting partitions");
+            if partitions.len() == 0 {
+                log_println!("No partitions found, giving up.");
+                return;
+            }
         }
-    }
-    log_println!("Found {} partitions:", partitions.len());
-    for partition in partitions {
-        log_println!(
-            "{:8} - starting at {:8X}",
-            format_size(partition.descriptor.sectors * 512),
-            partition.descriptor.start_lba
-        )
-    }
+        log_println!("Found {} partitions:", partitions.len());
+        for partition in partitions {
+            log_println!(
+                "{:8} - starting at {:8X}",
+                format_size(partition.descriptor.sectors * 512),
+                partition.descriptor.start_lba
+            )
+        }
+    */
 }
 
 /// Panic handler for the OS.
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    kernel::log_print!("{}", info);
-    kernel::hlt_loop();
+    kernel::panic_handler(info);
 }
 
 /// This is the main function for tests.

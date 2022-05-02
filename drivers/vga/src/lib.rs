@@ -63,7 +63,7 @@ impl fmt::Write for VGALogger {
 }
 
 pub extern "C" fn driver_init(kernel_info: KernelInformation) -> Driver {
-    kernel::logger::LOGGER.lock().replace(Box::new(VGALogger {
+    kernel::LOGGER.lock().replace(Box::new(VGALogger {
         x: 0,
         start_x: 0,
         y: 0,

@@ -1,12 +1,18 @@
 use lazy_static::lazy_static;
 use x86_64::structures::idt::InterruptDescriptorTable;
 
-use crate::interrupts::{
-    cpu_handlers::{breakpoint_handler, double_fault_handler, page_fault_handler},
-    pic::InterruptIndex,
-    pic_handlers::{
-        ata_primary_interrupt_handler, ata_secondary_interrupt_handler, keyboard_interrupt_handler,
-        timer_interrupt_handler,
+use crate::{
+    debug,
+    interrupts::{
+        cpu_handlers::{
+            breakpoint_handler, double_fault_handler, general_protection_fault_handler,
+            page_fault_handler,
+        },
+        pic::InterruptIndex,
+        pic_handlers::{
+            ata_primary_interrupt_handler, ata_secondary_interrupt_handler,
+            keyboard_interrupt_handler, timer_interrupt_handler,
+        },
     },
 };
 
@@ -28,6 +34,8 @@ lazy_static! {
         }
 
         idt.page_fault.set_handler_fn(page_fault_handler);
+
+        idt.general_protection_fault.set_handler_fn(general_protection_fault_handler);
 
         // ##################
         // # PIC interrupts #
@@ -51,4 +59,5 @@ lazy_static! {
 /// Loads the IDT.
 pub fn init_idt() {
     IDT.load();
+    debug::log("IDT loaded");
 }
