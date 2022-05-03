@@ -101,4 +101,3 @@ pub fn reload_gdt() {
     }
     debug::log("Segment registers loaded");
 }
-}

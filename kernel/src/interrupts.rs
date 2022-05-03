@@ -6,8 +6,9 @@ mod cpu_handlers;
 mod interrupt_register;
 pub use interrupt_register::init_idt;
 mod gdt;
-mod pic_handlers;
+pub use gdt::reload_gdt;
 mod pic;
+mod pic_handlers;
 
 use crate::debug;
 

@@ -17,6 +17,7 @@ use test_framework::{
 
 mod init;
 use crate::logger::Logger;
+pub use init::{hlt_loop, init, register_driver, reload_drivers};
 
 mod interrupts;
 pub mod logger;
