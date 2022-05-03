@@ -101,3 +101,46 @@ pub fn reload_gdt() {
     }
     debug::log("Segment registers loaded");
 }
+
+type UserModeFunction = extern "C" fn();
+
+/// Jumps to the passed function, entering the user mode (Ring 3)
+pub unsafe fn run_in_user_mode(function: UserModeFunction, kernel_info: KernelInformation) -> ! {
+    let function_pointer = function as *const () as *const u8;
+    // TODO: allocate separate level-1 or -2 pages for each process, move the kernel to higher memory
+    let virtual_address_u64 = 0x_3333_AAAA_0000u64;
+    let virtual_address = VirtAddr::new(virtual_address_u64); // User space code address
+    create_mapping(
+        Page::containing_address(virtual_address),
+        None,
+        PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::USER_ACCESSIBLE,
+        kernel_info,
+    );
+    let virtual_address = virtual_address.as_mut_ptr::<u8>();
+    // TODO: loading the user mode function from e.g. an ELF file
+    virtual_address.copy_from_nonoverlapping(function_pointer, 1024);
+
+    let code_selector = ((GDT.2.code_selector.index() * 8) | 3) as u64;
+    let data_selector = ((GDT.2.data_selector.index() * 8) | 3) as u64;
+    x86_64::instructions::interrupts::disable();
+    debug::log("Moving to user mode");
+    asm!(
+        "mov rax, 0",
+        "push rax",         // aligning the stack
+        "push r14",         // data selector
+        "push r12",         // user mode stack pointer
+        "pushf",
+        "pop rax",
+        "or eax, 0x200",
+        "and eax, 0xffffbfff",
+        "push rax",            // eflags
+        "push r13",         // code selector (ring 3 code with bottom 2 bits set for ring 3)
+        "push r15",         // instruction address to return to
+        "iretq",
+        in("r12") (virtual_address.add(0x1000)), // TODO: better user mode stack pointer
+        in("r13") (code_selector),
+        in("r14") (data_selector),
+        in("r15") (virtual_address),
+    );
+    unreachable!();
+}

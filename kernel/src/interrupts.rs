@@ -6,9 +6,11 @@ mod cpu_handlers;
 mod interrupt_register;
 pub use interrupt_register::init_idt;
 mod gdt;
-pub use gdt::reload_gdt;
-mod pic;
 mod pic_handlers;
+pub use gdt::{reload_gdt, run_in_user_mode};
+mod pic;
+mod syscalls;
+pub use syscalls::setup_syscalls;
 
 use crate::debug;
 
