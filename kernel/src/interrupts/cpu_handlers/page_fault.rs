@@ -1,8 +1,8 @@
+use test_framework::serial_println;
 use x86_64::structures::idt::InterruptStackFrame;
 use x86_64::structures::idt::PageFaultErrorCode;
 
 use crate::hlt_loop;
-use crate::log_println;
 
 /// Handles a page fault.
 pub extern "x86-interrupt" fn page_fault_handler(
@@ -10,10 +10,11 @@ pub extern "x86-interrupt" fn page_fault_handler(
     error_code: PageFaultErrorCode,
 ) {
     use x86_64::registers::control::Cr2;
+    x86_64::instructions::interrupts::disable();
 
-    log_println!("EXCEPTION: PAGE FAULT");
-    log_println!("Accessed Address: {:?}", Cr2::read());
-    log_println!("Error Code: {:?}", error_code);
-    log_println!("{:#?}", stack_frame);
+    serial_println!("EXCEPTION: PAGE FAULT");
+    serial_println!("{:?}", error_code);
+    serial_println!("Page: {:?}", Cr2::read_raw());
+    serial_println!("{:#?}", stack_frame);
     hlt_loop();
 }

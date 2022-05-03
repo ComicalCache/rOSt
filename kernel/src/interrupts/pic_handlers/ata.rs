@@ -1,6 +1,6 @@
 use x86_64::structures::idt::InterruptStackFrame;
 
-use crate::interrupts::{pic::InterruptIndex, PICS};
+use crate::interrupts::pic::{InterruptIndex, PICS};
 
 pub extern "x86-interrupt" fn ata_primary_interrupt_handler(_stack_frame: InterruptStackFrame) {
     unsafe {
