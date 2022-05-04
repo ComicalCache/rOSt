@@ -1,3 +1,5 @@
-pub mod allocator;
-pub mod heap;
-pub mod page_table;
+mod allocator;
+mod heap;
+mod page_table;
+pub use heap::init;
+pub use page_table::create_mapping;

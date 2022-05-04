@@ -2,33 +2,44 @@ use bootloader::boot_info::{MemoryRegionKind, MemoryRegions};
 
 use test_framework::serial_println;
 
-pub fn print_memory_map(memory_map: &MemoryRegions) {
-    serial_println!("[   ---{:^15}---   ]", "MEMORY MAP");
-    memory_map.iter().for_each(|region| {
-        let mut size = region.end - region.start;
-        let mut size_format = "B";
-        if size >= 2 * 1024 {
-            if size < 2 * 1024 * 1024 {
-                size /= 1024;
-                size_format = "KiB";
-            } else if size < 2 * 1024 * 1024 * 1024 {
-                size /= 1024 * 1024;
-                size_format = "MiB";
-            } else {
-                size /= 1024 * 1024 * 1024;
-                size_format = "GiB";
-            }
-        }
-        serial_println!(
-            "{:14}- {:>4}{:>3}  ({:X})",
-            decode_memory_kind(region.kind),
-            size,
-            size_format,
-            region.start
-        );
-    });
+#[inline(always)]
+pub fn log(msg: &str) {
+    #[cfg(debug_assertions)]
+    serial_println!("[debug] {}", msg);
 }
 
+#[inline(always)]
+pub fn print_memory_map(memory_map: &MemoryRegions) {
+    #[cfg(debug_assertions)]
+    {
+        serial_println!("[   ---{:^15}---   ]", "MEMORY MAP");
+        memory_map.iter().for_each(|region| {
+            let mut size = region.end - region.start;
+            let mut size_format = "B";
+            if size >= 2 * 1024 {
+                if size < 2 * 1024 * 1024 {
+                    size /= 1024;
+                    size_format = "KiB";
+                } else if size < 2 * 1024 * 1024 * 1024 {
+                    size /= 1024 * 1024;
+                    size_format = "MiB";
+                } else {
+                    size /= 1024 * 1024 * 1024;
+                    size_format = "GiB";
+                }
+            }
+            serial_println!(
+                "{:14}- {:>4}{:>3}  ({:X})",
+                decode_memory_kind(region.kind),
+                size,
+                size_format,
+                region.start
+            );
+        });
+    }
+}
+
+#[cfg(debug_assertions)]
 fn decode_memory_kind(kind: MemoryRegionKind) -> &'static str {
     match kind {
         MemoryRegionKind::Usable => "usable",

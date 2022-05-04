@@ -1,11 +1,13 @@
 use bootloader::boot_info::{MemoryRegionKind, MemoryRegions};
 use lazy_static::lazy_static;
 use spin::Mutex;
-use x86_64::structures::paging::{Mapper, Page, PageSize, PageTableFlags};
+use x86_64::structures::paging::{Mapper, Page, PageSize, PageTableFlags, Size2MiB};
 use x86_64::{
-    structures::paging::{FrameAllocator, OffsetPageTable, PageTable, PhysFrame, Size4KiB},
+    structures::paging::{FrameAllocator, OffsetPageTable, PageTable, PhysFrame},
     PhysAddr, VirtAddr,
 };
+
+use crate::structures::kernel_information::KernelInformation;
 
 lazy_static! {
     pub static ref MEMORY_MAPPER: Mutex<Option<OffsetPageTable<'static>>> = Mutex::new(None);
@@ -43,14 +45,14 @@ unsafe fn active_level_4_table(physical_memory_offset: VirtAddr) -> &'static mut
 }
 
 /// A FrameAllocator that returns usable frames from the bootloader's memory map.
-pub struct BootInfoFrameAllocator {
+pub struct FullFrameAllocator {
     memory_map: &'static MemoryRegions,
 }
 
 static FRAME_NEXT: Mutex<usize> = Mutex::new(0);
 static FRAME_REGION: Mutex<usize> = Mutex::new(usize::MAX);
 
-impl BootInfoFrameAllocator {
+impl FullFrameAllocator {
     /// Create a FrameAllocator from the passed memory map.
     ///
     /// This function is unsafe because the caller must guarantee that the passed
@@ -66,19 +68,22 @@ impl BootInfoFrameAllocator {
                 .expect("No usable memory found")
                 .0;
         }
-        BootInfoFrameAllocator { memory_map }
+        FullFrameAllocator { memory_map }
     }
 }
 
-unsafe impl FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
+unsafe impl<S> FrameAllocator<S> for FullFrameAllocator
+where
+    S: PageSize,
+{
     /// Returns the next usable frame
-    fn allocate_frame(&mut self) -> Option<PhysFrame> {
+    fn allocate_frame(&mut self) -> Option<PhysFrame<S>> {
         let mut next = FRAME_NEXT.lock();
         let mut region_index = FRAME_REGION.lock();
         // Get the current region
         let mut region = self.memory_map.get(*region_index)?;
         // If we don't have any more pages left in the region...
-        if region.end - region.start < (((*next as u64) + 1) << 12) {
+        if region.end - region.start < ((*next as u64) + 1) * S::SIZE {
             // Find the index of a next Usable region
             *region_index = self
                 .memory_map
@@ -93,7 +98,7 @@ unsafe impl FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
         }
         // According to the Rust community, step_by+nth should be O(1)
         let phys_frame = (region.start..region.end)
-            .step_by(Size4KiB::SIZE as usize)
+            .step_by(S::SIZE as usize)
             .nth(*next)
             .map(|addr| PhysFrame::containing_address(PhysAddr::new(addr)))?;
         *next += 1;
@@ -101,18 +106,29 @@ unsafe impl FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
     }
 }
 
+/// Maps a given virtual page to a given physical address. If a physical address is not given, a frame will be allocated from the FrameAllocator.
 pub fn create_mapping(
-    page: Page,
-    address: u64,
+    page: Page<Size2MiB>,
+    address: Option<u64>,
     flags: PageTableFlags,
-    mapper: &mut OffsetPageTable,
-    frame_allocator: &mut impl FrameAllocator<Size4KiB>,
+    kernel_info: KernelInformation,
 ) {
-    let frame = PhysFrame::containing_address(PhysAddr::new(address));
+    let mut frame_allocator = unsafe { FullFrameAllocator::init(kernel_info.memory_regions) };
+    let mut mapper = MEMORY_MAPPER.lock();
+    let frame = if let Some(address) = address {
+        PhysFrame::<Size2MiB>::containing_address(PhysAddr::new(address))
+    } else {
+        frame_allocator
+            .allocate_frame()
+            .expect("No more frames available")
+    };
 
     let map_to_result = unsafe {
         // TODO: add checking for frame not in use
-        mapper.map_to(page, frame, flags, frame_allocator)
+        mapper
+            .as_mut()
+            .unwrap()
+            .map_to(page, frame, flags, &mut frame_allocator)
     };
     map_to_result.expect("map_to failed").flush();
 }

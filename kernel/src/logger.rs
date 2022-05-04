@@ -1,15 +1,10 @@
-use alloc::{boxed::Box, sync::Arc};
 use core::fmt::{self, Write};
-use lazy_static::lazy_static;
-use spin::Mutex;
+
+use crate::LOGGER;
 
 pub trait Logger: Write + Send {
     fn log(&mut self, message: &str);
     fn logln(&mut self, message: &str);
-}
-
-lazy_static! {
-    pub static ref LOGGER: Arc<Mutex<Option<Box<dyn Logger>>>> = Arc::from(Mutex::new(None));
 }
 
 #[doc(hidden)]
