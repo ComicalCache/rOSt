@@ -7,7 +7,7 @@ mod interrupt_register;
 pub use interrupt_register::init_idt;
 mod gdt;
 mod pic_handlers;
-pub use gdt::{reload_gdt, run_in_user_mode};
+pub use gdt::{reload_gdt, GDT};
 mod pic;
 mod syscalls;
 pub use syscalls::setup_syscalls;

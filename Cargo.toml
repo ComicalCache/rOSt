@@ -7,6 +7,11 @@ edition = { workspace=true }
 
 [package.metadata.bootloader]
 map-physical-memory = true
+physical-memory-offset = "0x0000_4000_0000_0000"
+kernel-stack-address = "0x_7555_AAAA_0000"
+boot-info-address = "0x_7555_AAAE_0000"
+framebuffer-address = "0x_7F55_AAAA_0000"
+#dynamic-range-start = "0xFFFF_8000_0000_0000" # can't do that cause we don't have the newest shiny version of bootloader
 
 [dependencies]
 utils = { workspace=true }

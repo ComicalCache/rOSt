@@ -13,7 +13,7 @@
 extern crate alloc;
 
 use bootloader::{entry_point, BootInfo};
-use core::{arch::asm, panic::PanicInfo};
+use core::panic::PanicInfo;
 use kernel::structures::kernel_information::KernelInformation;
 use tinytga::RawTga;
 use vga::vga_core::{Clearable, ImageDrawable};
@@ -22,13 +22,13 @@ use core::alloc::Layout;
 
 entry_point!(kernel);
 pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
-    let kernel_info = kernel::init(boot_info);
+    let mut kernel_info = kernel::init(boot_info);
     bootup_sequence(kernel_info);
 
     #[cfg(test)]
     kernel_test(kernel_info);
     #[cfg(not(test))]
-    kernel_main(kernel_info);
+    kernel_main(&mut kernel_info);
 
     kernel::hlt_loop();
 }
@@ -51,13 +51,13 @@ fn bootup_sequence(kernel_info: KernelInformation) {
 
 #[no_mangle]
 extern "C" fn user_mode_check() {
-    unsafe {
-        asm!("syscall");
-    }
+    //unsafe {
+    //    asm!("syscall");
+    //}
     loop {}
 }
 
-pub fn kernel_main(#[allow(unused_variables)] kernel_info: KernelInformation) {
+pub fn kernel_main(kernel_info: &mut KernelInformation) {
     unsafe {
         kernel::run_in_user_mode(user_mode_check, kernel_info);
     }

@@ -4,9 +4,14 @@ use alloc::vec::Vec;
 use bootloader::BootInfo;
 use lazy_static::lazy_static;
 use spin::Mutex;
+use x86_64::{
+    structures::paging::{Page, PageTableFlags, Size2MiB},
+    VirtAddr,
+};
 
 use crate::{
-    interrupts, memory,
+    interrupts,
+    memory::{self, create_mapping},
     structures::{
         driver::{Driver, Registrator},
         kernel_information::KernelInformation,
@@ -28,15 +33,28 @@ lazy_static! {
 pub fn init(boot_info: &'static BootInfo) -> KernelInformation {
     debug::print_memory_map(&boot_info.memory_regions);
 
-    let kernel_info = KernelInformation::new(boot_info);
-
     memory::init(boot_info);
-    interrupts::reload_gdt();
+    let kernel_info = KernelInformation::new(boot_info);
+    map_kernel_space(kernel_info);
+    interrupts::reload_gdt(kernel_info);
     interrupts::init_idt();
     interrupts::setup_syscalls();
     interrupts::enable();
 
     kernel_info
+}
+
+fn map_kernel_space(kernel_info: KernelInformation) {
+    for i in 0..32 {
+        create_mapping(
+            Page::<Size2MiB>::containing_address(VirtAddr::new(
+                kernel_info.kernel_start + (i << 21),
+            )),
+            Some(i << 21),
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::GLOBAL,
+            kernel_info,
+        );
+    }
 }
 
 /// Reinitializes all the registered drivers

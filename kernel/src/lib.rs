@@ -1,7 +1,13 @@
 #![no_std] // no standard library
 #![no_main]
 #![allow(incomplete_features)]
-#![feature(abi_x86_interrupt, generic_const_exprs, core_intrinsics, asm_const)]
+#![feature(
+    abi_x86_interrupt,
+    generic_const_exprs,
+    core_intrinsics,
+    asm_const,
+    naked_functions
+)]
 
 extern crate alloc;
 
@@ -21,7 +27,8 @@ pub use init::{hlt_loop, init, register_driver, register_syscall, reload_drivers
 use crate::logger::Logger;
 
 mod interrupts;
-pub use interrupts::run_in_user_mode;
+mod user_mode;
+pub use user_mode::run_in_user_mode;
 pub mod logger;
 mod memory;
 pub mod structures;
