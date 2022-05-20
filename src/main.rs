@@ -22,13 +22,13 @@ use core::alloc::Layout;
 
 entry_point!(kernel);
 pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
-    let kernel_info = kernel::init(boot_info);
+    let mut kernel_info = kernel::init(boot_info);
     bootup_sequence(kernel_info);
 
     #[cfg(test)]
     kernel_test(kernel_info);
     #[cfg(not(test))]
-    kernel_main(kernel_info);
+    kernel_main(&mut kernel_info);
 
     kernel::hlt_loop();
 }
@@ -57,7 +57,7 @@ extern "C" fn user_mode_check() {
     loop {}
 }
 
-pub fn kernel_main(#[allow(unused_variables)] kernel_info: KernelInformation) {
+pub fn kernel_main(kernel_info: &mut KernelInformation) {
     unsafe {
         kernel::run_in_user_mode(user_mode_check, kernel_info);
     }

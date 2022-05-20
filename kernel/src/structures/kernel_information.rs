@@ -2,15 +2,20 @@ use bootloader::{
     boot_info::{FrameBuffer, MemoryRegions, Optional},
     BootInfo,
 };
+use x86_64::PhysAddr;
 
-use crate::debug;
+use crate::{debug, memory::FullFrameAllocator};
 
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct KernelInformation {
     pub bootloader_version: [u16; 3],
+    pub physical_memory_offset: u64,
     pub framebuffer: Optional<KernelFrameBuffer>,
     pub memory_regions: &'static MemoryRegions,
+    pub allocator: FullFrameAllocator,
+    /// The start address of the kernel space in all page maps
+    pub kernel_start: PhysAddr,
 }
 
 #[derive(Clone, Copy)]
@@ -77,8 +82,14 @@ impl KernelInformation {
         debug::log("Obtained kernel info");
         KernelInformation {
             bootloader_version,
+            physical_memory_offset: *boot_info
+                .physical_memory_offset
+                .as_ref()
+                .expect("No physical memory mapping"),
             framebuffer,
             memory_regions: &boot_info.memory_regions,
+            allocator: unsafe { FullFrameAllocator::init(&boot_info.memory_regions) },
+            kernel_start: PhysAddr::new(0x007F_C000_0000u64),
         }
     }
 }

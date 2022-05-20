@@ -1,5 +1,8 @@
-use crate::{debug, memory::allocator::ALLOCATOR};
-use bootloader::BootInfo;
+/// Where the kernel heap starts
+const HEAP_START: usize = 0x_5555_AAAA_0000;
+/// Size of the kernel heap
+const HEAP_SIZE: usize = 16 * 1024 * 1024; // 16 MiB
+
 use x86_64::{
     structures::paging::{
         mapper::MapToError, FrameAllocator, Mapper, Page, PageTableFlags, Size2MiB,
@@ -7,32 +10,10 @@ use x86_64::{
     VirtAddr,
 };
 
-use super::page_table::{self, FullFrameAllocator, MEMORY_MAPPER};
-
-/// Initializes the page tables and kernel heap memory
-pub fn init(boot_info: &'static BootInfo) {
-    unsafe {
-        page_table::init(VirtAddr::new(
-            boot_info
-                .physical_memory_offset
-                .into_option()
-                .expect("physical memory mapping not set"),
-        ))
-    };
-    let mut frame_allocator = unsafe { FullFrameAllocator::init(&boot_info.memory_regions) };
-    let mut mapper = MEMORY_MAPPER.lock();
-    init_heap(mapper.as_mut().unwrap(), &mut frame_allocator).expect("heap initialization failed");
-    #[cfg(debug_assertions)]
-    debug::log("Heap initialized");
-}
-
-/// Where the heap starts
-const HEAP_START: usize = 0x_5555_AAAA_0000;
-/// Size of the heap
-const HEAP_SIZE: usize = 10 * 1024 * 1024; // 10 MiB
+use super::{allocator::ALLOCATOR, frame_allocator::FullFrameAllocator};
 
 /// maps the kernels heap memory area to physical addresses
-fn init_heap(
+pub fn init_heap(
     mapper: &mut impl Mapper<Size2MiB>,
     frame_allocator: &mut FullFrameAllocator,
 ) -> Result<(), MapToError<Size2MiB>> {

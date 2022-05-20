@@ -28,9 +28,8 @@ lazy_static! {
 pub fn init(boot_info: &'static BootInfo) -> KernelInformation {
     debug::print_memory_map(&boot_info.memory_regions);
 
-    let kernel_info = KernelInformation::new(boot_info);
-
     memory::init(boot_info);
+    let kernel_info = KernelInformation::new(boot_info);
     interrupts::reload_gdt();
     interrupts::init_idt();
     interrupts::setup_syscalls();
