@@ -6,3 +6,5 @@ mod page_fault;
 pub use page_fault::page_fault_handler;
 mod general_protection_fault;
 pub use general_protection_fault::general_protection_fault_handler;
+mod non_maskable_interrupt;
+pub use non_maskable_interrupt::nmi_handler;

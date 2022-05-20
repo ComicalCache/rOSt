@@ -6,7 +6,7 @@ use crate::{
     interrupts::{
         cpu_handlers::{
             breakpoint_handler, double_fault_handler, general_protection_fault_handler,
-            page_fault_handler,
+            nmi_handler, page_fault_handler,
         },
         pic::InterruptIndex,
         pic_handlers::{
@@ -25,8 +25,11 @@ lazy_static! {
         // # CPU interrupts #
         // ##################
         idt.breakpoint.set_handler_fn(breakpoint_handler);
-
         unsafe {
+            idt.non_maskable_interrupt
+                .set_handler_fn(nmi_handler)
+                .set_stack_index(crate::interrupts::gdt::NMI_IST_INDEX);
+
             idt.double_fault
                 .set_handler_fn(double_fault_handler)
                 // changes stack for double fault to avoid triple faults

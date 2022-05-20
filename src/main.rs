@@ -13,7 +13,7 @@
 extern crate alloc;
 
 use bootloader::{entry_point, BootInfo};
-use core::panic::PanicInfo;
+use core::{arch::asm, panic::PanicInfo};
 use kernel::structures::kernel_information::KernelInformation;
 use tinytga::RawTga;
 use vga::vga_core::{Clearable, ImageDrawable};
@@ -51,9 +51,9 @@ fn bootup_sequence(kernel_info: KernelInformation) {
 
 #[no_mangle]
 extern "C" fn user_mode_check() {
-    //unsafe {
-    //    asm!("syscall");
-    //}
+    unsafe {
+        asm!("syscall");
+    }
     loop {}
 }
 

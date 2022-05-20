@@ -1,12 +1,11 @@
 use core::arch::asm;
 
-use test_framework::serial_println;
-use utils::{
-    constants::MIB,
-    phys_addr_conversion::{KernelConverter, ToPhysAddr},
-};
+use utils::constants::MIB;
 use x86_64::{
-    structures::paging::{FrameAllocator, PageTable, PageTableFlags, PhysFrame, Size4KiB},
+    registers::control::Cr3Flags,
+    structures::paging::{
+        FrameAllocator, PageTable, PageTableFlags, PhysFrame, Size2MiB, Size4KiB,
+    },
     PhysAddr, VirtAddr,
 };
 
@@ -19,68 +18,63 @@ use crate::{
 unsafe fn get_user_mode_mapping(
     pmo: u64,
     allocator: &mut FullFrameAllocator,
-) -> Option<(u64, PhysAddr)> {
-    let frame1: PhysFrame<Size4KiB> = allocator.allocate_frame()?;
-    let frame2: PhysFrame<Size4KiB> = allocator.allocate_frame()?;
-    let frame3: PhysFrame<Size4KiB> = allocator.allocate_frame()?;
-    let frame4: PhysFrame<Size4KiB> = allocator.allocate_frame()?;
+) -> Option<(PhysFrame, PhysAddr)> {
+    let level_4_frame: PhysFrame<Size4KiB> = allocator.allocate_frame()?;
+    let level_3_frame: PhysFrame<Size4KiB> = allocator.allocate_frame()?;
+    let level_2_frame: PhysFrame<Size4KiB> = allocator.allocate_frame()?;
 
-    let page_table_flags =
-        PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::USER_ACCESSIBLE;
+    let page_table_flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE;
+    let user_page_table_flags = page_table_flags | PageTableFlags::USER_ACCESSIBLE;
 
-    let level_4_table_address = frame1.start_address().as_u64();
-    let level_3_table_address = frame2.start_address().as_u64();
-    let level_2_table_address = frame3.start_address().as_u64();
-    let level_2_kernel_table_address = frame4.start_address().as_u64();
+    let level_4_table_address = level_4_frame.start_address();
+    let level_3_table_address = level_3_frame.start_address();
+    let level_2_table_address = level_2_frame.start_address();
+    // Just take the mapping from the bootloader's page tables
+    let (level_2_kernel_data_table_address, level_2_kernel_stack_table_address) =
+        get_kernel_data_and_stack_level_2_table_addresses(pmo);
 
-    let level_4_table = (level_4_table_address + pmo) as *mut PageTable;
+    let level_4_table = (level_4_table_address.as_u64() + pmo) as *mut PageTable;
+    let level_4_table = level_4_table.as_mut().unwrap();
     // Mapping 0x0000_0000_0000 to level 3 table
-    level_4_table.as_mut().unwrap()[0]
-        .set_addr(PhysAddr::new(level_3_table_address), page_table_flags);
+    level_4_table[0].set_addr(level_3_table_address, user_page_table_flags);
 
-    let level_3_table = (level_3_table_address + pmo) as *mut PageTable;
+    let level_3_table = (level_3_table_address.as_u64() + pmo) as *mut PageTable;
+    let level_3_table = level_3_table.as_mut().unwrap();
     // Mapping 0x0000_0000_0000 to level 2 table
-    level_3_table.as_mut().unwrap()[0]
-        .set_addr(PhysAddr::new(level_2_table_address), page_table_flags);
-    // Mapping 0x007F_C000_0000 to kernel
-    level_3_table.as_mut().unwrap()[511].set_addr(
-        PhysAddr::new(level_2_kernel_table_address),
-        page_table_flags,
-    );
+    level_3_table[0].set_addr(level_2_table_address, user_page_table_flags);
+    // Mapping 0x007F_8000_0000 to kernel stack
+    level_3_table[510].set_addr(level_2_kernel_stack_table_address, page_table_flags);
+    // Mapping 0x007F_C000_0000 to kernel data
+    level_3_table[511].set_addr(level_2_kernel_data_table_address, page_table_flags);
 
-    let level_2_table = (level_2_table_address + pmo) as *mut PageTable;
+    let level_2_table = (level_2_table_address.as_u64() + pmo) as *mut PageTable;
     // Mapping level 2 entries to 2mb frames
+    let level_2_table = level_2_table.as_mut().unwrap();
     level_2_table
-        .as_mut()
-        .unwrap()
         .iter_mut()
-        .enumerate()
         .take(8) // We're mapping 16mb for now, e.g. 0x0100_0000
-        .for_each(|(i, entry)| {
+        .for_each(|entry| {
+            let frame: PhysFrame<Size2MiB> = allocator
+                .allocate_frame()
+                .expect("Failed to allocate user process frame");
             entry.set_addr(
-                // Offsetting by 64mb of physical memory to go over the kernel data
-                // TODO: Should be changed so it actually maps some free area
-                PhysAddr::new((i as u64 * MIB * 2) + (64 * MIB)),
-                PageTableFlags::HUGE_PAGE | page_table_flags,
+                frame.start_address(),
+                PageTableFlags::HUGE_PAGE | user_page_table_flags,
             );
         });
 
-    let level_2_kernel_table = (level_2_kernel_table_address + pmo) as *mut PageTable;
-    // Mapping the kernel
-    level_2_kernel_table
-        .as_mut()
-        .unwrap()
-        .iter_mut()
-        .enumerate()
-        .take(32) // Taking first 64MB for the kernel
-        .for_each(|(i, entry)| {
-            entry.set_addr(
-                PhysAddr::new(i as u64 * MIB * 2),
-                PageTableFlags::HUGE_PAGE | PageTableFlags::PRESENT | PageTableFlags::GLOBAL,
-            );
-        });
+    Some((level_4_frame, level_2_table[0].addr()))
+}
 
-    Some((level_4_table_address, PhysAddr::new(64 * MIB)))
+unsafe fn get_kernel_data_and_stack_level_2_table_addresses(pmo: u64) -> (PhysAddr, PhysAddr) {
+    use x86_64::registers::control::Cr3;
+    let level4 = (Cr3::read().0.start_address().as_u64() + pmo) as *const PageTable;
+    let level4 = level4.as_ref().unwrap();
+
+    let level3 = ((level4[0].addr().as_u64() + pmo) as *const PageTable)
+        .as_ref()
+        .unwrap();
+    (level3[511].addr(), level3[510].addr())
 }
 
 type UserModeFunction = extern "C" fn();
@@ -92,7 +86,7 @@ pub unsafe fn run_in_user_mode(
 ) -> ! {
     let function_pointer = function as *const () as *const u8;
     debug::log("Creating user mode mapping");
-    let (_user_page_map, user_physical_address) = get_user_mode_mapping(
+    let (user_page_map, user_physical_address) = get_user_mode_mapping(
         kernel_info.physical_memory_offset,
         &mut kernel_info.allocator,
     )
@@ -107,72 +101,45 @@ pub unsafe fn run_in_user_mode(
     )
     .as_mut_ptr::<u8>();
     debug::log("Loading program");
+
     // TODO: loading the user mode function from e.g. an ELF file
     virtual_address.copy_from_nonoverlapping(function_pointer, 1024);
 
     x86_64::instructions::interrupts::disable();
-    debug::log("Moving to user mode");
 
-    let inner_function_mapped_addr = VirtAddr::from_ptr(
-        run_in_user_mode_inner
-            .to_kernel_address(kernel_info.physical_memory_offset, kernel_info.kernel_start),
-    )
-    .as_ptr::<u8>();
-    serial_println!(
-        "address was: {:X?}, now is: {:X?}",
-        run_in_user_mode_inner as u64,
-        inner_function_mapped_addr as u64
-    );
-    {
-        let a = run_in_user_mode_inner as *const u8;
-        let b = inner_function_mapped_addr;
-        let c = (VirtAddr::from_ptr(run_in_user_mode as *const u8)
-            .to_phys_address(kernel_info.physical_memory_offset)
-            + kernel_info.physical_memory_offset)
-            .as_u64() as *const u8;
-        serial_println!("First bytes of the function:");
-        for i in 0..8 {
-            serial_println!(
-                "{:X?} vs {:X?} vs {:X?}",
-                a.add(i).read_volatile(),
-                b.add(i).read_volatile(),
-                c.add(i).read_volatile()
-            );
-        }
-    }
     let virtual_address = user_mode_code_address as *mut u8;
-    let code_selector = ((GDT.2.code_selector.index() * 8) | 3) as u64;
-    let data_selector = ((GDT.2.data_selector.index() * 8) | 3) as u64;
-    asm!(
-        "jmp r11",
-        in("r10") (_user_page_map),
-        in("r11") (inner_function_mapped_addr),
-        // TODO: better user mode stack pointer
-        in("r12") (virtual_address.add(2 * MIB as usize - 4097)), // For now we only use the first 2MiB page
-        in("r13") (code_selector),
-        in("r14") (data_selector),
-        in("r15") (virtual_address),
-        options(noreturn)
-    );
-}
+    let code_selector = ((GDT.1.user_code_selector.index() * 8) | 3) as u64;
+    let data_selector = ((GDT.1.user_data_selector.index() * 8) | 3) as u64;
 
-/// Runs the assembler script which switches the paging register, prepares the return stack, and jumps to user mode
-#[naked]
-unsafe extern "C" fn run_in_user_mode_inner() {
+    debug::log("Moving to user paging");
+
+    let addr = x86_64::registers::control::Cr3::read();
+    x86_64::registers::control::Cr3::write(user_page_map, Cr3Flags::empty());
+    x86_64::registers::control::Cr3::write(addr.0, addr.1);
+
+    debug::log("Back from user paging, moving to user mode");
+
     asm!(
-        //"mov cr3, r10",
+        "mov cr3, r10",
         "mov rax, 0",
         "push rax", // aligning the stack
         "push r14", // data selector
         "push r12", // user mode stack pointer
-        "pushf",
+        "pushfq",
         "pop rax",
         "or eax, 0x200",
         "and eax, 0xffffbfff",
+        "and eax, 0x0",
         "push rax", // eflags
         "push r13", // code selector (ring 3 code with bottom 2 bits set for ring 3)
         "push r15", // instruction address to return to
         "iretq",
+        in("r10") (user_page_map.start_address().as_u64()),
+        // TODO: better user mode stack pointer
+        in("r12") (virtual_address.add(2 * MIB as usize - 4096)), // For now we only use the first 2MiB page
+        in("r13") (code_selector),
+        in("r14") (data_selector),
+        in("r15") (virtual_address),
         options(noreturn)
     );
 }

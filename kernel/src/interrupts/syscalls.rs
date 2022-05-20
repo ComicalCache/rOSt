@@ -16,10 +16,10 @@ pub fn setup_syscalls() {
     model_specific::SFMask::write(RFlags::all());
     // STAR stores the indices of the GDT entries for the kernel and user descriptors.
     model_specific::Star::write(
-        GDT.2.code_selector,
-        GDT.2.data_selector,
-        GDT.1.code_selector,
-        GDT.1.data_selector,
+        GDT.1.user_code_selector,
+        GDT.1.user_data_selector,
+        GDT.1.kernel_code_selector,
+        GDT.1.kernel_data_selector,
     )
     .unwrap();
     let new_efer_flags = {
@@ -48,8 +48,8 @@ pub fn setup_syscalls() {
 /// 6. restore the user mode stack pointer
 /// 7. sysret (maybe setting the flags back?)
 #[no_mangle]
-extern "C" fn syscall_handler() {
-    debug::log("syscall");
+unsafe extern "C" fn syscall_handler() {
     // TODO: handle syscall
+    debug::log("Syscall");
     loop {}
 }

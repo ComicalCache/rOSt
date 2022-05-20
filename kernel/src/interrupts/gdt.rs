@@ -1,16 +1,14 @@
 use lazy_static::lazy_static;
-use test_framework::serial_println;
-use utils::phys_addr_conversion::KernelConverter;
 use x86_64::registers::segmentation::{SegmentSelector, DS, ES, SS};
 use x86_64::structures::gdt::{Descriptor, GlobalDescriptorTable};
 use x86_64::structures::tss::TaskStateSegment;
-use x86_64::VirtAddr;
+use x86_64::{PrivilegeLevel, VirtAddr};
 
 use crate::debug;
-use crate::structures::kernel_information::KernelInformation;
 
 /// the interrupt stack table index of the stack used for double faults
 pub const DOUBLE_FAULT_IST_INDEX: u16 = 0;
+pub const NMI_IST_INDEX: u16 = 0;
 
 lazy_static! {
     /// The TSS of the OS.
@@ -45,11 +43,22 @@ lazy_static! {
             stack_end
         };
 
+        tss.interrupt_stack_table[NMI_IST_INDEX as usize] = {
+
+            static mut STACK: Stack = Stack([0; STACK_SIZE]);
+
+            let stack_start = VirtAddr::from_ptr(unsafe { &STACK });
+
+            // returns the highest address of the stack because the stack grows downwards
+            let stack_end = stack_start + STACK_SIZE;
+            stack_end
+        };
+
         tss
     };
 
     /// The GDT used by the OS.
-    pub static ref GDT: (GlobalDescriptorTable, Selectors, Selectors) = {
+    pub static ref GDT: (GlobalDescriptorTable, Selectors) = {
         let mut gdt = GlobalDescriptorTable::new();
 
         let kernel_code_selector = gdt.add_entry(Descriptor::kernel_code_segment());
@@ -58,18 +67,16 @@ lazy_static! {
         let user_data_selector = gdt.add_entry(Descriptor::user_data_segment());
         let user_code_selector = gdt.add_entry(Descriptor::user_code_segment());
 
-        let tss_selector = gdt.add_entry(Descriptor::tss_segment(&TSS));
+        let mut tss_selector = gdt.add_entry(Descriptor::tss_segment(&TSS));
+        tss_selector.set_rpl(PrivilegeLevel::Ring0);
 
         (
             gdt,
             Selectors {
-                code_selector: kernel_code_selector,
-                data_selector: kernel_data_selector,
-                tss_selector: tss_selector
-            },
-            Selectors {
-                code_selector: user_code_selector,
-                data_selector: user_data_selector,
+                kernel_code_selector: kernel_code_selector,
+                kernel_data_selector: kernel_data_selector,
+                user_code_selector: user_code_selector,
+                user_data_selector: user_data_selector,
                 tss_selector: tss_selector
             },
         )
@@ -77,34 +84,27 @@ lazy_static! {
 }
 
 pub struct Selectors {
-    pub code_selector: SegmentSelector,
-    pub data_selector: SegmentSelector,
+    pub kernel_code_selector: SegmentSelector,
+    pub kernel_data_selector: SegmentSelector,
+    pub user_code_selector: SegmentSelector,
+    pub user_data_selector: SegmentSelector,
     tss_selector: SegmentSelector,
 }
 
 /// Initialises the GDT and TSS.
-pub fn reload_gdt(kernel_info: KernelInformation) {
+pub fn reload_gdt() {
     use x86_64::instructions::segmentation::{Segment, CS};
     use x86_64::instructions::tables::load_tss;
     debug::log("Loading GDT and segment registers");
-    serial_println!("GDT is at {:X?}", &GDT.0 as *const GlobalDescriptorTable);
-    serial_println!(
-        "Kernel GDT is at {:X?}",
-        GDT.0
-            .to_kernel_address(kernel_info.physical_memory_offset, kernel_info.kernel_start)
-            as *const GlobalDescriptorTable
-    );
-    GDT.0
-        .to_kernel_address(kernel_info.physical_memory_offset, kernel_info.kernel_start)
-        .load();
+    GDT.0.load();
     debug::log("GDT loaded");
     let selector = &GDT.1;
     unsafe {
-        CS::set_reg(selector.code_selector);
+        CS::set_reg(selector.kernel_code_selector);
         load_tss(selector.tss_selector);
-        SS::set_reg(selector.data_selector);
-        DS::set_reg(selector.data_selector);
-        ES::set_reg(selector.data_selector);
+        SS::set_reg(selector.kernel_data_selector);
+        DS::set_reg(selector.kernel_data_selector);
+        ES::set_reg(selector.kernel_data_selector);
     }
     debug::log("Segment registers loaded");
 }

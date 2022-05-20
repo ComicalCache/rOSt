@@ -2,6 +2,7 @@ use bootloader::{
     boot_info::{FrameBuffer, MemoryRegions, Optional},
     BootInfo,
 };
+use x86_64::PhysAddr;
 
 use crate::{debug, memory::FullFrameAllocator};
 
@@ -13,7 +14,8 @@ pub struct KernelInformation {
     pub framebuffer: Optional<KernelFrameBuffer>,
     pub memory_regions: &'static MemoryRegions,
     pub allocator: FullFrameAllocator,
-    pub kernel_start: u64, // The start address of the kernel space in all processes
+    /// The start address of the kernel space in all page maps
+    pub kernel_start: PhysAddr,
 }
 
 #[derive(Clone, Copy)]
@@ -87,7 +89,7 @@ impl KernelInformation {
             framebuffer,
             memory_regions: &boot_info.memory_regions,
             allocator: unsafe { FullFrameAllocator::init(&boot_info.memory_regions) },
-            kernel_start: 0x007F_C000_0000u64,
+            kernel_start: PhysAddr::new(0x007F_C000_0000u64),
         }
     }
 }

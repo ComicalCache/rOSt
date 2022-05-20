@@ -47,14 +47,14 @@ unsafe fn active_level_4_table(physical_memory_offset: VirtAddr) -> &'static mut
 /// Maps a given virtual page to a given physical address. If a physical address is not given, a frame will be allocated from the FrameAllocator.
 pub fn create_mapping(
     page: Page<Size2MiB>,
-    address: Option<u64>,
+    address: Option<PhysAddr>,
     flags: PageTableFlags,
     kernel_info: KernelInformation,
 ) {
     let mut frame_allocator = unsafe { FullFrameAllocator::init(kernel_info.memory_regions) };
     let mut mapper = MEMORY_MAPPER.lock();
     let frame = if let Some(address) = address {
-        PhysFrame::<Size2MiB>::containing_address(PhysAddr::new(address))
+        PhysFrame::<Size2MiB>::containing_address(address)
     } else {
         frame_allocator
             .allocate_frame()
@@ -62,7 +62,6 @@ pub fn create_mapping(
     };
 
     let map_to_result = unsafe {
-        // TODO: add checking for frame not in use
         mapper
             .as_mut()
             .unwrap()
