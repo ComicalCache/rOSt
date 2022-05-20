@@ -2,7 +2,6 @@ use core::arch::asm;
 
 use utils::constants::MIB;
 use x86_64::{
-    registers::control::Cr3Flags,
     structures::paging::{
         FrameAllocator, PageTable, PageTableFlags, PhysFrame, Size2MiB, Size4KiB,
     },
@@ -111,13 +110,7 @@ pub unsafe fn run_in_user_mode(
     let code_selector = ((GDT.1.user_code_selector.index() * 8) | 3) as u64;
     let data_selector = ((GDT.1.user_data_selector.index() * 8) | 3) as u64;
 
-    debug::log("Moving to user paging");
-
-    let addr = x86_64::registers::control::Cr3::read();
-    x86_64::registers::control::Cr3::write(user_page_map, Cr3Flags::empty());
-    x86_64::registers::control::Cr3::write(addr.0, addr.1);
-
-    debug::log("Back from user paging, moving to user mode");
+    debug::log("Moving to user mode");
 
     asm!(
         "mov cr3, r10",
