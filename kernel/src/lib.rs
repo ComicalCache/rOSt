@@ -29,12 +29,10 @@ use crate::logger::Logger;
 mod interrupts;
 mod user_mode;
 pub use user_mode::run_in_user_mode;
+mod debug;
 pub mod logger;
 mod memory;
 pub mod structures;
-
-#[cfg(debug_assertions)]
-mod debug;
 
 lazy_static! {
     pub static ref LOGGER: Arc<Mutex<Option<Box<dyn Logger>>>> = Arc::from(Mutex::new(None));
