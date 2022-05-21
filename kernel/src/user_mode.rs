@@ -122,10 +122,10 @@ pub unsafe fn run_in_user_mode(
         "pop rax",
         "or eax, 0x200",
         "and eax, 0xffffbfff",
-        "and eax, 0x0",
         "push rax", // eflags
         "push r13", // code selector (ring 3 code with bottom 2 bits set for ring 3)
         "push r15", // instruction address to return to
+        // TODO: Should probably zero all the registers before running user program to avoid data leaks
         "iretq",
         in("r10") (user_page_map.start_address().as_u64()),
         // TODO: better user mode stack pointer
