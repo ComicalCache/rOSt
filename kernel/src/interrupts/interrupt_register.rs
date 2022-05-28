@@ -10,11 +10,12 @@ use crate::{
         },
         pic::InterruptIndex,
         pic_handlers::{
-            ata_primary_interrupt_handler, ata_secondary_interrupt_handler,
-            keyboard_interrupt_handler, timer_interrupt_handler,
+            _timer, ata_primary_interrupt_handler, ata_secondary_interrupt_handler,
+            keyboard_interrupt_handler,
         },
     },
 };
+use x86_64::VirtAddr;
 
 lazy_static! {
     /// The IDT used by the OS.
@@ -43,8 +44,11 @@ lazy_static! {
         // ##################
         // # PIC interrupts #
         // ##################
-        idt[InterruptIndex::Timer.as_usize()]
-            .set_handler_fn(timer_interrupt_handler);
+        unsafe {
+            idt[InterruptIndex::Timer.as_usize()]
+                .set_handler_addr(VirtAddr::from_ptr(_timer as *const ()))
+                .set_stack_index(crate::interrupts::gdt::TIMER_IST_INDEX);
+        }
 
         idt[InterruptIndex::Keyboard.as_usize()]
             .set_handler_fn(keyboard_interrupt_handler);

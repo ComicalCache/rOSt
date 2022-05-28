@@ -15,7 +15,9 @@ extern crate alloc;
 use bootloader::{entry_point, BootInfo};
 use core::{arch::asm, panic::PanicInfo};
 use kernel::structures::kernel_information::KernelInformation;
+use test_framework::serial_println;
 use tinytga::RawTga;
+use utils::constants::MIB;
 use vga::vga_core::{Clearable, ImageDrawable};
 
 use core::alloc::Layout;
@@ -50,17 +52,55 @@ fn bootup_sequence(kernel_info: KernelInformation) {
 }
 
 #[no_mangle]
-extern "C" fn user_mode_check() {
-    unsafe {
-        asm!("mov rdi, 0", "syscall", "mov rdi, 1", "syscall");
+extern "C" fn user_mode_check_1() {
+    let mut i = 1;
+    loop {
+        i += 1;
+        if i > 10_000_000 {
+            syscall(1, 0, 0);
+            i = 1;
+        }
     }
-    loop {}
+}
+
+#[no_mangle]
+extern "C" fn user_mode_check_2() {
+    let mut i = 1;
+    loop {
+        i += 1;
+        if i > 10_000_000 {
+            syscall(2, 0, 0);
+            i = 1;
+        }
+    }
+}
+
+#[inline(always)]
+fn syscall(rdi: u64, rsi: u64, rdx: u64) {
+    unsafe {
+        asm!(
+            "push r10; push rcx",
+            "push rdi; push rsi; push rdx",
+            "syscall", 
+            "pop rdx; pop rsi; pop rdi",
+            "pop rcx; pop r10",
+            in("rdi")(rdi), 
+            in("rsi")(rsi), 
+            in("rdx")(rdx));
+    }
 }
 
 pub fn kernel_main(kernel_info: &mut KernelInformation) {
-    unsafe {
-        kernel::run_in_user_mode(user_mode_check, kernel_info);
-    }
+    use kernel::processes::{add_process, run_processes, Process, Thread};
+
+    let process1 = add_process(Process::new(user_mode_check_1, *kernel_info, 1));
+    let thread1 = Thread::new(0x1000, 2 * MIB, process1);
+
+    let process2 = add_process(Process::new(user_mode_check_2, *kernel_info, 2));
+    let thread2 = Thread::new(0x1000, 2 * MIB, process2);
+
+    run_processes();
+    serial_println!("Something went wrong");
     /*
         let test = Box::new(4);
         log_println!("New boxed value: {:#?}", test);
