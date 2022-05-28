@@ -1,4 +1,4 @@
-/// A fixed size stack.
+/// A stack with a fixed size.
 pub struct StaticStack<T: Sized + Default + Clone + Copy, const C: usize> {
     buffer: [T; C],
     top: usize,
@@ -8,6 +8,7 @@ pub struct StaticStack<T: Sized + Default + Clone + Copy, const C: usize> {
 #[derive(Debug)]
 #[repr(u8)]
 pub enum StaticStackError {
+    /// The stack is full.
     EOS,
 }
 

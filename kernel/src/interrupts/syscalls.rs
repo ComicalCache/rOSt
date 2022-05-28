@@ -1,3 +1,5 @@
+use lazy_static::lazy_static;
+use spin::Mutex;
 use test_framework::serial_println;
 use utils::syscall_name::SysCallName;
 use x86_64::VirtAddr;
@@ -5,9 +7,17 @@ use x86_64::VirtAddr;
 use crate::debug;
 
 use super::gdt::GDT;
+use core::{arch::asm, mem};
+
+pub type SysCallHandlerFunc = extern "C" fn(u64, u64);
+
+lazy_static! {
+    static ref SYSCALLS: Mutex<[SysCallHandlerFunc; 1024]> =
+        Mutex::new([unsafe { mem::transmute(0u8 as *const ()) }; 1024]);
+}
 
 /// Sets up the LSTAR, FSTAR and STAR model-specific registers so it's possible to use `syscall`.
-pub fn setup_syscalls() {
+pub(crate) fn setup_syscalls() {
     use x86_64::registers::model_specific;
     use x86_64::registers::model_specific::{Efer, EferFlags};
     use x86_64::registers::rflags::RFlags;
@@ -35,6 +45,14 @@ pub fn setup_syscalls() {
     debug::log("Syscalls active");
 }
 
+pub fn register_syscall(syscall_number: u16, handler: SysCallHandlerFunc) {
+    SYSCALLS.lock()[syscall_number as usize] = handler;
+}
+
+fn call_syscall(syscall_number: u16, arg1: u64, arg2: u64) {
+    SYSCALLS.lock()[syscall_number as usize](arg1, arg2);
+}
+
 /// Handles a system call.
 /// On entry to this function:
 /// - the instruction pointer is stored in RCX
@@ -52,7 +70,6 @@ pub fn setup_syscalls() {
 #[no_mangle]
 #[naked]
 unsafe extern "C" fn _syscall() -> ! {
-    use core::arch::asm;
     asm!(
         "mov r10, rsp",
         "mov rsp, 0x007F80014000", // User stack saved in R10, start of kernel stack loaded
@@ -67,6 +84,7 @@ unsafe extern "C" fn _syscall() -> ! {
         "push r15",
         // We didn't touch RDI, RSI and RDX so we can just call the function with them.
         "call handler",
+        // TODO: Returning using iret so we can return to kernel processes
         "pop r15", // restore callee-saved registers
         "pop r14",
         "pop r13",
@@ -75,17 +93,16 @@ unsafe extern "C" fn _syscall() -> ! {
         "pop rbp",
         "pop r11",
         "pop rcx",
-        "pop rsp",
+        "pop r10",
+        "mov rsp, r10",
         "sysretq",
         options(noreturn)
     );
 }
 
 #[no_mangle]
-extern "C" fn handler(name: SysCallName, arg2: u64, arg3: u64) {
+extern "C" fn handler(name: u64, arg1: u64, arg2: u64) {
     // This block executes after saving the user state and before returning back
-    match name {
-        SysCallName::Debug => debug::log("Debug"),
-        SysCallName::SecondDebug => debug::log("SecondDebug"),
-    }
+    serial_println!("syscall {:#?}", name);
+    //call_syscall(name as u64 as u16, arg1, arg2);
 }

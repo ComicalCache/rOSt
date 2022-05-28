@@ -22,7 +22,7 @@ use test_framework::{
 };
 
 mod init;
-pub use init::{hlt_loop, init, register_driver, register_syscall, reload_drivers};
+pub use init::{hlt_loop, init, register_driver, reload_drivers};
 
 use crate::logger::Logger;
 
@@ -32,6 +32,7 @@ pub use user_mode::run_in_user_mode;
 mod debug;
 pub mod logger;
 mod memory;
+pub mod processes;
 pub mod structures;
 
 lazy_static! {
