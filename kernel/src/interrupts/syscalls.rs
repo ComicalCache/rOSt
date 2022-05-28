@@ -1,3 +1,5 @@
+use test_framework::serial_println;
+use utils::syscall_name::SysCallName;
 use x86_64::VirtAddr;
 
 use crate::debug;
@@ -11,7 +13,7 @@ pub fn setup_syscalls() {
     use x86_64::registers::rflags::RFlags;
     debug::log("Loading LSTAR, FSTAR and STAR");
     // LSTAR stores the address of the `syscall` handler.
-    model_specific::LStar::write(VirtAddr::from_ptr(syscall_handler as *const ()));
+    model_specific::LStar::write(VirtAddr::from_ptr(_syscall as *const ()));
     // FSTAR stores which bits of the flag register are cleared by `syscall`.
     model_specific::SFMask::write(RFlags::all());
     // STAR stores the indices of the GDT entries for the kernel and user descriptors.
@@ -46,10 +48,44 @@ pub fn setup_syscalls() {
 /// 4. do our thing with the values we got from the user
 /// 5. restore the registers from the stack
 /// 6. restore the user mode stack pointer
-/// 7. sysret (maybe setting the flags back?)
+/// 7. sysretq (maybe setting the flags back?)
 #[no_mangle]
-unsafe extern "C" fn syscall_handler() {
-    // TODO: handle syscall
-    debug::log("Syscall");
-    loop {}
+#[naked]
+unsafe extern "C" fn _syscall() -> ! {
+    use core::arch::asm;
+    asm!(
+        "mov r10, rsp",
+        "mov rsp, 0x007F80014000", // User stack saved in R10, start of kernel stack loaded
+        "push r10",
+        "push rcx",
+        "push r11",
+        "push rbp",
+        "push rbx", // save callee-saved registers
+        "push r12",
+        "push r13",
+        "push r14",
+        "push r15",
+        // We didn't touch RDI, RSI and RDX so we can just call the function with them.
+        "call handler",
+        "pop r15", // restore callee-saved registers
+        "pop r14",
+        "pop r13",
+        "pop r12",
+        "pop rbx",
+        "pop rbp",
+        "pop r11",
+        "pop rcx",
+        "pop rsp",
+        "sysretq",
+        options(noreturn)
+    );
+}
+
+#[no_mangle]
+extern "C" fn handler(name: SysCallName, arg2: u64, arg3: u64) {
+    // This block executes after saving the user state and before returning back
+    match name {
+        SysCallName::Debug => debug::log("Debug"),
+        SysCallName::SecondDebug => debug::log("SecondDebug"),
+    }
 }

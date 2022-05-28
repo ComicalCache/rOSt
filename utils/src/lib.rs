@@ -11,6 +11,7 @@ pub mod byte_reader;
 pub mod constants;
 pub mod port_extensions;
 pub mod static_stack;
+pub mod syscall_name;
 
 pub const KIBIBYTE: u64 = 1024;
 pub const MEBIBYTE: u64 = KIBIBYTE * 1024;

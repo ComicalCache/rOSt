@@ -52,7 +52,7 @@ fn bootup_sequence(kernel_info: KernelInformation) {
 #[no_mangle]
 extern "C" fn user_mode_check() {
     unsafe {
-        asm!("syscall");
+        asm!("mov rdi, 0", "syscall", "mov rdi, 1", "syscall");
     }
     loop {}
 }

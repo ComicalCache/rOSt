@@ -1,7 +1,13 @@
 #![no_std] // no standard library
 #![no_main]
 #![allow(incomplete_features)]
-#![feature(abi_x86_interrupt, generic_const_exprs, core_intrinsics, asm_const)]
+#![feature(
+    abi_x86_interrupt,
+    generic_const_exprs,
+    core_intrinsics,
+    asm_const,
+    naked_functions
+)]
 
 extern crate alloc;
 
@@ -23,12 +29,10 @@ use crate::logger::Logger;
 mod interrupts;
 mod user_mode;
 pub use user_mode::run_in_user_mode;
+mod debug;
 pub mod logger;
 mod memory;
 pub mod structures;
-
-#[cfg(debug_assertions)]
-mod debug;
 
 lazy_static! {
     pub static ref LOGGER: Arc<Mutex<Option<Box<dyn Logger>>>> = Arc::from(Mutex::new(None));
