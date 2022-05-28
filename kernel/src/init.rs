@@ -11,7 +11,6 @@ use crate::{
     },
 };
 
-#[cfg(debug_assertions)]
 use crate::debug;
 
 lazy_static! {
