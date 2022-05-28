@@ -91,6 +91,7 @@ fn syscall(rdi: u64, rsi: u64, rdx: u64) {
 }
 
 pub fn kernel_main(kernel_info: &mut KernelInformation) {
+    
     use kernel::processes::{add_process, run_processes, Process, Thread};
 
     let process1 = add_process(Process::new(user_mode_check_1, *kernel_info, 1));

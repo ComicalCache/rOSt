@@ -36,3 +36,16 @@ pub(crate) fn switch_to_kernel_memory() {
         }
     }
 }
+
+/// Performs an action while having kernel paging table. Then switches back.
+pub(crate) fn with_kernel_memory(action: fn() -> ()) {
+    let cr3 = Cr3::read().0.start_address();
+    switch_to_kernel_memory();
+    action();
+    unsafe {
+        Cr3::write(
+            PhysFrame::from_start_address_unchecked(cr3),
+            Cr3Flags::empty(),
+        )
+    };
+}
