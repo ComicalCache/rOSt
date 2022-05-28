@@ -1,16 +1,16 @@
-# x86-64 OS written in Rust
+# rOSt, a 64-Bit Rust operating system
 
 This OS is based on the excellent blog of [phil-opp](https://os.phil-opp.com/).
 
 ### Structure
 
 The project is divided into multiple folders:
-1. `src` contains the main entry point of the kernel.
-2. `rost-lib` contains the standard library that will be available to all programs written for the OS.
-3. `boot` contains the settings for building the image with the bootloader, and QEMU settings.
-4. `utils` contains utility functions, constants and structures that could be used throughout the kernel.
-5. `drivers` contains drivers that add extended functionality that is not in the scope of the kernel core.
-6. `kernel` contains the core library and functionality.
+1. [src](src/) contains the main entry point of the kernel.
+2. [rost-lib](rost-lib/) contains the standard library that will be available to all programs written for the OS.
+3. [boot](boot/) contains the settings for building the image with the bootloader, and QEMU settings.
+4. [utils](utils/) contains utility functions, constants and structures that could be used throughout the kernel.
+5. [drivers](drivers/) contains drivers that add extended functionality that is not in the scope of the kernel core.
+6. [kernel](kernel/) contains the core library and functionality.
 
 ### Requirements
 
