@@ -22,5 +22,8 @@ jobs:
           override: true
           components: llvm-tools-preview, rust-src
 
-      - name: Build
+      - name: Build debug
         run: cargo kbuild --verbose
+
+      - name: Build release
+        run: cargo kbuild-r --verbose
