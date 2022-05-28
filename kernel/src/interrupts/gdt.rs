@@ -8,7 +8,8 @@ use crate::debug;
 
 /// the interrupt stack table index of the stack used for double faults
 pub const DOUBLE_FAULT_IST_INDEX: u16 = 0;
-pub const NMI_IST_INDEX: u16 = 0;
+pub const NMI_IST_INDEX: u16 = 1;
+pub const TIMER_IST_INDEX: u16 = 2;
 
 lazy_static! {
     /// The TSS of the OS.
@@ -44,6 +45,17 @@ lazy_static! {
         };
 
         tss.interrupt_stack_table[NMI_IST_INDEX as usize] = {
+
+            static mut STACK: Stack = Stack([0; STACK_SIZE]);
+
+            let stack_start = VirtAddr::from_ptr(unsafe { &STACK });
+
+            // returns the highest address of the stack because the stack grows downwards
+            let stack_end = stack_start + STACK_SIZE;
+            stack_end
+        };
+
+        tss.interrupt_stack_table[TIMER_IST_INDEX as usize] = {
 
             static mut STACK: Stack = Stack([0; STACK_SIZE]);
 

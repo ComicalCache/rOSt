@@ -9,8 +9,7 @@ mod gdt;
 mod pic_handlers;
 pub use gdt::{reload_gdt, GDT};
 mod pic;
-mod syscalls;
-pub use syscalls::setup_syscalls;
+pub mod syscalls;
 
 use crate::debug;
 
