@@ -64,7 +64,7 @@ impl Scheduler {
     ///
     /// This action removes the thread from the waiting queue - be sure to add it back using `return_thread` if it should be ran again.
     pub fn schedule(&mut self) -> Option<Rc<RefCell<Thread>>> {
-        if self.threads.len() == 0 {
+        if self.threads.is_empty() {
             return None;
         }
         Some(self.threads.remove(0))

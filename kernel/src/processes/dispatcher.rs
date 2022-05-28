@@ -35,7 +35,7 @@ pub fn run_thread(thread: Rc<RefCell<Thread>>) -> ! {
             ((GDT.1.user_data_selector.index() * 8) | 3) as u64
         };
         cr3 = process.cr3;
-        state = thread_mut.registers_state.clone();
+        state = thread_mut.registers_state;
     }
 
     get_scheduler().running_thread.replace(thread.clone());

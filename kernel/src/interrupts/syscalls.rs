@@ -7,13 +7,16 @@ use x86_64::VirtAddr;
 use crate::debug;
 
 use super::gdt::GDT;
-use core::{arch::asm, mem};
+use core::arch::asm;
 
 pub type SysCallHandlerFunc = extern "C" fn(u64, u64);
 
+extern "C" fn fail_syscall(_arg1: u64, _arg2: u64) {
+    panic!("NO SYSCALL DEFINED");
+}
+
 lazy_static! {
-    static ref SYSCALLS: Mutex<[SysCallHandlerFunc; 1024]> =
-        Mutex::new([unsafe { mem::transmute(0u8 as *const ()) }; 1024]);
+    static ref SYSCALLS: Mutex<[SysCallHandlerFunc; 1024]> = Mutex::new([fail_syscall; 1024]);
 }
 
 /// Sets up the LSTAR, FSTAR and STAR model-specific registers so it's possible to use `syscall`.
@@ -45,6 +48,7 @@ pub(crate) fn setup_syscalls() {
     debug::log("Syscalls active");
 }
 
+#[allow(dead_code)]
 pub fn register_syscall(syscall_number: u16, handler: SysCallHandlerFunc) {
     SYSCALLS.lock()[syscall_number as usize] = handler;
 }
@@ -101,8 +105,8 @@ unsafe extern "C" fn _syscall() -> ! {
 }
 
 #[no_mangle]
-extern "C" fn handler(name: u64, arg1: u64, arg2: u64) {
+extern "C" fn handler(name: SysCallName, arg1: u64, arg2: u64) {
     // This block executes after saving the user state and before returning back
     serial_println!("syscall {:#?}", name);
-    //call_syscall(name as u64 as u16, arg1, arg2);
+    call_syscall(name as u64 as u16, arg1, arg2);
 }

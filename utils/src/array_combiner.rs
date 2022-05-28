@@ -32,3 +32,9 @@ impl<'a, T: Sized + Default + Copy> Combiner<'a, T> {
         Some(result)
     }
 }
+
+impl<'a, T: Sized + Default + Copy> Default for Combiner<'a, T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}

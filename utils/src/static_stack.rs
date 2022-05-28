@@ -29,7 +29,7 @@ impl<T: Sized + Default + Clone + Copy, const C: usize> StaticStack<T, C> {
         if self.top == C {
             return Err(StaticStackError::EOS);
         }
-        self.buffer[self.top] = item.clone();
+        self.buffer[self.top] = *item;
         self.top += 1;
         Ok(())
     }
@@ -49,5 +49,11 @@ impl<T: Sized + Default + Clone + Copy, const C: usize> StaticStack<T, C> {
     /// Returns the number of elements in the stack.
     pub fn length(&self) -> usize {
         self.top
+    }
+}
+
+impl<T: Sized + Default + Clone + Copy, const C: usize> Default for StaticStack<T, C> {
+    fn default() -> Self {
+        Self::new()
     }
 }

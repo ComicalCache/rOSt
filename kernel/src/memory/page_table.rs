@@ -45,6 +45,7 @@ unsafe fn active_level_4_table(physical_memory_offset: VirtAddr) -> &'static mut
 }
 
 /// Maps a given virtual page to a given physical address. If a physical address is not given, a frame will be allocated from the FrameAllocator.
+#[allow(dead_code)]
 pub fn create_mapping(
     page: Page<Size2MiB>,
     address: Option<PhysAddr>,
