@@ -1,0 +1,14 @@
+on:
+  issues:
+    types: [labeled]
+jobs:
+  Move_Labeled_Issue_On_Project_Board:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: konradpabjan/move-labeled-or-milestoned-issue@v2.0
+      with:
+        action-token: "${{ secrets.MY_TOKEN }}"
+        project-url: "https://github.com/0xffset/rOSt/projects/2"
+        column-name: "To-Do"
+        label-name: "documentation"
+        columns-to-ignore: "Paused,In Progress,Done"
