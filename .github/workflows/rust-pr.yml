@@ -28,7 +28,7 @@ jobs:
         run: cargo check --target x86_64-unknown-none
 
       - name: Install required lint components
-        use: rustup component add clippy-sarif sarif-fmt
+        run: rustup component add clippy-sarif sarif-fmt
 
       - name: Run rust-clippy
         run: cargo clippy
