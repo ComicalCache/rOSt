@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Install rust
-        run: rustup upgrade
+        run: rustup show && rustup upgrade
 
       - name: Build Images
         run: cargo kimage-r --verbose
