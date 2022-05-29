@@ -31,8 +31,8 @@ jobs:
           override: true
           components: llvm-tools-preview, rust-src, clippy
           
-      - name: Install required cargo
-        run: cargo install clippy-sarif sarif-fmt
+      - name: Install required cargo and target
+        run: cargo install clippy-sarif sarif-fmt && rustup target add x86_64-unknown-none
         
       - name: Run rust-clippy
         run:
