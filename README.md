@@ -1,6 +1,6 @@
 # rOSt, a 64-Bit Rust operating system
 
-This OS is based on the excellent blog of [phil-opp](https://os.phil-opp.com/).
+For more information about the project, please visit the [wiki](https://github.com/0xffset/rOSt/wiki), this readme is meant to give a quick overview of the project for developers and anyone interested.
 
 ### Structure
 
