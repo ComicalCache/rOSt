@@ -25,7 +25,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install rust
-        run: rustup update && rustup upgrade
+        run: cargo check
 
       - name: Run rust-clippy
         run: cargo clippy
