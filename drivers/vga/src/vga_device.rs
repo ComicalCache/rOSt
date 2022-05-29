@@ -209,7 +209,7 @@ impl TextDrawable for VGADevice {
                     self.draw_char(
                         pos_x,
                         pos_y,
-                        &bitmap_char.as_ref().unwrap_or(invalid_char),
+                        bitmap_char.as_ref().unwrap_or(invalid_char),
                         color,
                     );
                     pos_x += CHAR_WIDTH;

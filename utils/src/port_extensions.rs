@@ -59,7 +59,7 @@ impl<A: PortWriteAccess> PortExtWrite<u8> for PortGeneric<u16, A> {
         while index < buffer.len() {
             let mut value = buffer[index] as u16;
             index += 1;
-            value = ((buffer[index] as u16) << 8) | value;
+            value |= (buffer[index] as u16) << 8;
             self.write(value);
             index += 1;
         }
@@ -76,7 +76,7 @@ impl<T: PortWrite + Copy, A: PortWriteAccess> PortExtWrite<T> for PortGeneric<T,
     #[inline]
     unsafe fn write_from_buffer(self: &mut PortGeneric<T, A>, buffer: &[T]) {
         for data in buffer {
-            self.write(data.clone());
+            self.write(*data);
             x86_64::instructions::nop(); // We need a tiny delay when batch-writing to IO ports
             x86_64::instructions::nop();
         }

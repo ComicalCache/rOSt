@@ -91,14 +91,13 @@ fn syscall(rdi: u64, rsi: u64, rdx: u64) {
 }
 
 pub fn kernel_main(kernel_info: &mut KernelInformation) {
-    
     use kernel::processes::{add_process, run_processes, Process, Thread};
 
     let process1 = add_process(Process::new(user_mode_check_1, *kernel_info, 1));
-    let thread1 = Thread::new(0x1000, 2 * MIB, process1);
+    let _thread1 = Thread::new(0x1000, 2 * MIB, process1);
 
     let process2 = add_process(Process::new(user_mode_check_2, *kernel_info, 2));
-    let thread2 = Thread::new(0x1000, 2 * MIB, process2);
+    let _thread2 = Thread::new(0x1000, 2 * MIB, process2);
 
     run_processes();
     serial_println!("Something went wrong");

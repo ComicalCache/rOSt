@@ -36,7 +36,7 @@ pub struct ATABus {
 impl ATABus {
     pub(crate) const fn new(base_port: u16) -> Self {
         ATABus {
-            data_register_rw: Port::new(base_port + 0x00),
+            data_register_rw: Port::new(base_port),
             error_register_r: PortReadOnly::new(base_port + 0x01),
             features_register_w: PortWriteOnly::new(base_port + 0x01),
             sector_count_register_rw: Port::new(base_port + 0x02),
@@ -127,14 +127,14 @@ impl ATABus {
             if !self.connected() {
                 return Err(ATAIdentifyError::BusNotConnected);
             }
-            if let Err(_) = self.wait_for(StatusRegisterFlags::BSY, false) {
+            if self.wait_for(StatusRegisterFlags::BSY, false).is_err() {
                 return Err(ATAIdentifyError::Unknown);
             }
             without_interrupts(|| {
                 self.drive_head_register_rw
                     .write(if master { 0xA0 } else { 0xB0 });
                 self.device_control_register_w.write(0x00);
-                if let Err(_) = self.wait_400ns() {
+                if self.wait_400ns().is_err() {
                     return Err(ATAIdentifyError::Unknown);
                 }
                 self.sector_count_register_rw.write(0x00);

@@ -52,9 +52,7 @@ impl ATADisk {
         sectors: u32,
         partition_type: u8,
     ) -> Result<ATAPartition, PartitionIOError> {
-        let mut mbr = self
-            .read_sector(0)
-            .map_err(|err| PartitionIOError::ATAError(err))?;
+        let mut mbr = self.read_sector(0).map_err(PartitionIOError::ATAError)?;
         let descriptors: Vec<PartitionDescriptor> = mbr[446..510]
             .chunks(16)
             .filter_map(PartitionDescriptor::from_bytes)
@@ -101,7 +99,7 @@ impl ATADisk {
         mbr[446 + partition_free_index * 16..446 + partition_free_index * 16 + 16]
             .copy_from_slice(&partition_bytes);
         self.write_sector(0, &mbr)
-            .map_err(|err| PartitionIOError::ATAError(err))?;
+            .map_err(PartitionIOError::ATAError)?;
         Ok(ATAPartition {
             disk: self.clone(),
             descriptor,

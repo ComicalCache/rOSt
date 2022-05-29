@@ -59,9 +59,9 @@ impl DiskDescriptor {
         let udma_available_modes = {
             let udma_available_modes = udma as u8;
             let mut udma_buffer = [false; 8];
-            for i in 0..8 {
+            for (i, item) in udma_buffer.iter_mut().enumerate() {
                 if udma_available_modes & (1 << i) != 0 {
-                    udma_buffer[i] = true;
+                    *item = true;
                 }
             }
             udma_buffer

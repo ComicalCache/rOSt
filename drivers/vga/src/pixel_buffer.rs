@@ -17,13 +17,13 @@ impl PixelBuffer for BasePixelBuffer<{ PixelFormat::RGB }> {
     fn put_pixel(&mut self, index: usize, color: VGAColor<u8>) {
         let index = index << self.bytes_per_pixel_shift;
         let frame_color = VGAColor {
-            red: self.frame_pointer[index + 0],
+            red: self.frame_pointer[index],
             green: self.frame_pointer[index + 1],
             blue: self.frame_pointer[index + 2],
             alpha: self.frame_pointer[index + 3],
         };
         let result_color = VGAColor::interpolate(frame_color, color, color.alpha);
-        self.frame_pointer[index + 0] = result_color.red;
+        self.frame_pointer[index] = result_color.red;
         self.frame_pointer[index + 1] = result_color.green;
         self.frame_pointer[index + 2] = result_color.blue;
         self.frame_pointer[index + 3] = result_color.alpha;
@@ -37,13 +37,13 @@ impl PixelBuffer for BasePixelBuffer<{ PixelFormat::BGR }> {
         let frame_color = VGAColor {
             red: self.frame_pointer[index + 2],
             green: self.frame_pointer[index + 1],
-            blue: self.frame_pointer[index + 0],
+            blue: self.frame_pointer[index],
             alpha: self.frame_pointer[index + 3],
         };
         let result_color = VGAColor::interpolate(frame_color, color, color.alpha);
         self.frame_pointer[index + 2] = result_color.red;
         self.frame_pointer[index + 1] = result_color.green;
-        self.frame_pointer[index + 0] = result_color.blue;
+        self.frame_pointer[index] = result_color.blue;
         self.frame_pointer[index + 3] = result_color.alpha;
     }
 }

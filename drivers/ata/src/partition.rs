@@ -17,7 +17,7 @@ impl ATAPartition {
         } else {
             self.disk
                 .read_sector(lba + self.descriptor.start_lba)
-                .map_err(|err| PartitionIOError::ATAError(err))
+                .map_err(PartitionIOError::ATAError)
         }
     }
 
@@ -27,7 +27,7 @@ impl ATAPartition {
         } else {
             self.disk
                 .write_sector(lba + self.descriptor.start_lba, buffer)
-                .map_err(|err| PartitionIOError::ATAError(err))
+                .map_err(PartitionIOError::ATAError)
         }
     }
 }

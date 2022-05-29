@@ -28,8 +28,7 @@ lazy_static! {
             let stack_start = VirtAddr::from_ptr(unsafe { &STACK });
 
             // returns the highest address of the stack because the stack grows downwards
-            let stack_end = stack_start + STACK_SIZE;
-            stack_end
+            stack_start + STACK_SIZE
         };
 
         // set the interrupt stack table to the appropriate address
@@ -40,8 +39,7 @@ lazy_static! {
             let stack_start = VirtAddr::from_ptr(unsafe { &STACK });
 
             // returns the highest address of the stack because the stack grows downwards
-            let stack_end = stack_start + STACK_SIZE;
-            stack_end
+            stack_start + STACK_SIZE
         };
 
         tss.interrupt_stack_table[NMI_IST_INDEX as usize] = {
@@ -51,8 +49,7 @@ lazy_static! {
             let stack_start = VirtAddr::from_ptr(unsafe { &STACK });
 
             // returns the highest address of the stack because the stack grows downwards
-            let stack_end = stack_start + STACK_SIZE;
-            stack_end
+            stack_start + STACK_SIZE
         };
 
         tss.interrupt_stack_table[TIMER_IST_INDEX as usize] = {
@@ -62,8 +59,7 @@ lazy_static! {
             let stack_start = VirtAddr::from_ptr(unsafe { &STACK });
 
             // returns the highest address of the stack because the stack grows downwards
-            let stack_end = stack_start + STACK_SIZE;
-            stack_end
+            stack_start + STACK_SIZE
         };
 
         tss
@@ -85,11 +81,11 @@ lazy_static! {
         (
             gdt,
             Selectors {
-                kernel_code_selector: kernel_code_selector,
-                kernel_data_selector: kernel_data_selector,
-                user_code_selector: user_code_selector,
-                user_data_selector: user_data_selector,
-                tss_selector: tss_selector
+                kernel_code_selector,
+                kernel_data_selector,
+                user_code_selector,
+                user_data_selector,
+                tss_selector
             },
         )
     };
