@@ -14,15 +14,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install latest nightly
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          override: true
-          components: llvm-tools-preview, rust-src
-
-      - name: Add x86_64-unknown-none target
-        run: rustup target add x86_64-unknown-none
+      - name: Install rust
+        run: cargo check --target x86_64-unknown-none
 
       - name: Build Images
         run: cargo kimage-r --verbose
