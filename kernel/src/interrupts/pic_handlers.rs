@@ -1,5 +1,5 @@
 mod timer;
-pub use timer::timer_interrupt_handler;
+pub use timer::_timer;
 mod keyboard;
 pub use keyboard::keyboard_interrupt_handler;
 mod ata;

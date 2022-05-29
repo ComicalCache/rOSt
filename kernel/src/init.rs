@@ -21,7 +21,7 @@ lazy_static! {
 /// Initialises the components of the OS, **must** be called before any other functions.
 pub fn init(boot_info: &'static BootInfo) -> KernelInformation {
     debug::print_memory_map(&boot_info.memory_regions);
-
+    memory::save_kernel_memory();
     memory::init(boot_info);
     let kernel_info = KernelInformation::new(boot_info);
     interrupts::reload_gdt();

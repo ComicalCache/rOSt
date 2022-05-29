@@ -26,10 +26,8 @@ pub use init::{hlt_loop, init, register_driver, reload_drivers};
 
 use crate::logger::Logger;
 
-mod interrupts;
-mod user_mode;
-pub use user_mode::run_in_user_mode;
 mod debug;
+mod interrupts;
 pub mod logger;
 mod memory;
 pub mod processes;
