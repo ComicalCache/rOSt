@@ -25,7 +25,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install rust
-        run: cargo check
+        run: cargo check --target x86_64-custom.json
 
       - name: Run rust-clippy
         run: cargo clippy
