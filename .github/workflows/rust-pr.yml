@@ -23,6 +23,8 @@ jobs:
         filters: |
           src:
             - '*.rs'
+            - '*.toml'
+            - '*.json'
 
   build:
     runs-on: ubuntu-latest
