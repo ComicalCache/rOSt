@@ -1,6 +1,13 @@
 name: Create issues from todos
 
 on:
+  workflow_dispatch:
+    inputs:
+      importAll:
+        default: 'false'
+        required: false
+        type: boolean
+        description: Enable, if you want to import all TODOs. Runs on checked out branch! Only use if you're sure what you are doing.
   push:
     branches:
       - main
@@ -20,5 +27,6 @@ jobs:
         uses: DerJuulsn/todo-issue@v1.0.5
         with:
           excludePattern: '^(\.cargo/)'
+          autoAssign: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
