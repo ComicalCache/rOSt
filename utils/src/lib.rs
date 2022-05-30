@@ -41,6 +41,14 @@ macro_rules! pop_all {
     };
 }
 
+#[macro_export]
+/// Macro for mov'ing all registers from a RegistersState struct stored in r9.
+macro_rules! mov_all {
+    () => {
+        "mov r15, [r9]; mov r14, [r9 + 8]; mov r13, [r9 + 16]; mov r12, [r9 + 24]; mov r11, [r9 + 32]; mov r10, [r9 + 40]; mov r8, [r9 + 56]; mov rdi, [r9 + 64]; mov rsi, [r9 + 72]; mov rbp, [r9 + 80]; mov rdx, [r9 + 88]; mov rcx, [r9 + 96]; mov rbx, [r9 + 104]; mov rax, [r9 + 112]; mov r9, [r9 + 48]"
+    };
+}
+
 #[inline(always)]
 /// Returns the current CPU tick. May be off a bit.
 pub fn get_current_tick() -> u64 {
