@@ -1,6 +1,8 @@
 // This might be reimplemented from scratch in the future.
 
 // TODO: implement all remaining interrupt handlers for CPU interrupts
+// We need to implement all interrupt handlers and add basic handling to them so we don't double fault.
+// Better handling for each of them will be added later.
 
 mod cpu_handlers;
 mod interrupt_register;

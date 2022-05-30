@@ -11,6 +11,7 @@ use utils::{mov_all, push_all};
 
 pub type SysCallHandlerFunc = extern "C" fn(u64, u64) -> u64;
 
+/// A system call handler that panics.
 extern "C" fn fail_syscall(_arg1: u64, _arg2: u64) -> u64 {
     panic!("NO SYSCALL DEFINED");
 }
@@ -49,12 +50,9 @@ pub(crate) fn setup_syscalls() {
 }
 
 #[allow(dead_code)]
+/// Registers a system call with a handler.
 pub fn register_syscall(syscall_number: u16, handler: SysCallHandlerFunc) {
     SYSCALLS.lock()[syscall_number as usize] = handler;
-}
-
-fn call_syscall(syscall_number: u16, arg1: u64, arg2: u64) -> u64 {
-    with_kernel_memory(|| SYSCALLS.lock()[syscall_number as usize](arg1, arg2))
 }
 
 /// Handles a system call.
@@ -70,7 +68,7 @@ fn call_syscall(syscall_number: u16, arg1: u64, arg2: u64) -> u64 {
 /// 4. do our thing with the values we got from the user
 /// 5. restore the registers from the stack
 /// 6. restore the user mode stack pointer
-/// 7. sysretq (maybe setting the flags back?)
+/// 7. iretq
 #[no_mangle]
 #[naked]
 unsafe extern "C" fn _syscall() -> ! {
@@ -110,10 +108,11 @@ unsafe extern "C" fn _syscall() -> ! {
 #[no_mangle]
 extern "C" fn handler(name: SysCallName, arg1: u64, arg2: u64) -> u64 {
     // This block executes after saving the user state and before returning back
-    call_syscall(name as u64 as u16, arg1, arg2)
+    with_kernel_memory(|| SYSCALLS.lock()[name as u64 as u16 as usize](arg1, arg2))
 }
 
-// TODO: Try to combine both of these functions to make it faster.
+// TODO Try to combine both of these functions to make it faster.
+// We should be able to return a C-style struct with two u64s and manage it through ASM.
 #[no_mangle]
 extern "C" fn get_code_selector() -> u64 {
     with_kernel_memory(|| {
