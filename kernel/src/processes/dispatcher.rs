@@ -7,6 +7,7 @@ use x86_64::PhysAddr;
 use crate::interrupts::GDT;
 use crate::processes::Thread;
 use utils::get_current_tick;
+use utils::mov_all;
 
 use super::get_scheduler;
 use super::RegistersState;
@@ -48,25 +49,11 @@ pub fn run_thread(thread: Rc<RefCell<Thread>>) -> ! {
             "push r12", // process stack pointer
             "or r11, 0x200",
             "and r11, 0xffffffffffffbfff",
-            "push r11", // eflags
+            "push r11", // rflags
             "push r13", // code selector
             "push r15", // instruction address to return to
             // Loading register state before jumping into thread
-            "mov r15, [r9]",
-            "mov r14, [r9 + 8]",
-            "mov r13, [r9 + 16]",
-            "mov r12, [r9 + 24]",
-            "mov r11, [r9 + 32]",
-            "mov r10, [r9 + 40]",
-            "mov r8, [r9 + 56]",
-            "mov rdi, [r9 + 64]",
-            "mov rsi, [r9 + 72]",
-            "mov rbp, [r9 + 80]",
-            "mov rdx, [r9 + 88]",
-            "mov rcx, [r9 + 96]",
-            "mov rbx, [r9 + 104]",
-            "mov rax, [r9 + 112]",
-            "mov r9, [r9 + 48]",
+            mov_all!(),
             "iretq",
             in("r9") (&state as *const RegistersState as *const u8),
             in("r10") (cr3.as_u64()),

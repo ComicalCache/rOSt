@@ -57,7 +57,7 @@ extern "C" fn user_mode_check_1() {
     loop {
         i += 1;
         if i > 10_000_000 {
-            syscall(1, 0, 0);
+            syscall(0, 0, 0);
             i = 1;
         }
     }
@@ -69,24 +69,26 @@ extern "C" fn user_mode_check_2() {
     loop {
         i += 1;
         if i > 10_000_000 {
-            syscall(2, 0, 0);
+            syscall(1, 0, 0);
             i = 1;
         }
     }
 }
 
 #[inline(always)]
-fn syscall(rdi: u64, rsi: u64, rdx: u64) {
+fn syscall(rdi: u64, rsi: u64, rdx: u64) -> u64 {
     unsafe {
+        let result: u64;
         asm!(
-            "push r10; push rcx",
-            "push rdi; push rsi; push rdx",
-            "syscall", 
-            "pop rdx; pop rsi; pop rdi",
-            "pop rcx; pop r10",
-            in("rdi")(rdi), 
-            in("rsi")(rsi), 
-            in("rdx")(rdx));
+            "push r10; push r11; push rcx",
+            "syscall",
+            "pop rcx; pop r11; pop r10",
+            in("rdi")(rdi),
+            in("rsi")(rsi),
+            in("rdx")(rdx),
+            out("rax")(result)
+        );
+        result
     }
 }
 
