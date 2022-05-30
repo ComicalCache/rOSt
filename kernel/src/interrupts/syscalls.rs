@@ -54,7 +54,7 @@ pub fn register_syscall(syscall_number: u16, handler: SysCallHandlerFunc) {
 }
 
 fn call_syscall(syscall_number: u16, arg1: u64, arg2: u64) -> u64 {
-    SYSCALLS.lock()[syscall_number as usize](arg1, arg2)
+    with_kernel_memory(|| SYSCALLS.lock()[syscall_number as usize](arg1, arg2))
 }
 
 /// Handles a system call.
