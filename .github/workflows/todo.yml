@@ -3,7 +3,12 @@ name: Create issues from todos
 on:
   push:
     branches:
-     - main
+      - main
+
+permissions:
+  issues: write
+  repository-projects: read
+  contents: read
 
 jobs:
   todos:
@@ -11,8 +16,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: todo-actions
-        uses: dtinth/todo-actions@v0.2.0
+      - name: todo-issue
+        uses: DerJuulsn/todo-issue@v1.0.5
+        with:
+          excludePattern: '^(\.cargo/)'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TODO_ACTIONS_MONGO_URL: ${{ secrets.TODO_ACTIONS_MONGO_URL }}
