@@ -1,17 +1,17 @@
 use lazy_static::lazy_static;
 use spin::Mutex;
-use test_framework::serial_println;
 use utils::syscall_name::SysCallName;
 use x86_64::VirtAddr;
 
-use crate::debug;
+use crate::{debug, memory::with_kernel_memory, processes::get_scheduler};
 
 use super::gdt::GDT;
 use core::arch::asm;
+use utils::{mov_all, push_all};
 
-pub type SysCallHandlerFunc = extern "C" fn(u64, u64);
+pub type SysCallHandlerFunc = extern "C" fn(u64, u64) -> u64;
 
-extern "C" fn fail_syscall(_arg1: u64, _arg2: u64) {
+extern "C" fn fail_syscall(_arg1: u64, _arg2: u64) -> u64 {
     panic!("NO SYSCALL DEFINED");
 }
 
@@ -53,8 +53,8 @@ pub fn register_syscall(syscall_number: u16, handler: SysCallHandlerFunc) {
     SYSCALLS.lock()[syscall_number as usize] = handler;
 }
 
-fn call_syscall(syscall_number: u16, arg1: u64, arg2: u64) {
-    SYSCALLS.lock()[syscall_number as usize](arg1, arg2);
+fn call_syscall(syscall_number: u16, arg1: u64, arg2: u64) -> u64 {
+    SYSCALLS.lock()[syscall_number as usize](arg1, arg2)
 }
 
 /// Handles a system call.
@@ -75,38 +75,69 @@ fn call_syscall(syscall_number: u16, arg1: u64, arg2: u64) {
 #[naked]
 unsafe extern "C" fn _syscall() -> ! {
     asm!(
+        "cli",
         "mov r10, rsp",
         "mov rsp, 0x007F80014000", // User stack saved in R10, start of kernel stack loaded
-        "push r10",
-        "push rcx",
-        "push r11",
-        "push rbp",
-        "push rbx", // save callee-saved registers
-        "push r12",
-        "push r13",
-        "push r14",
-        "push r15",
-        // We didn't touch RDI, RSI and RDX so we can just call the function with them.
-        "call handler",
-        // TODO: Returning using iret so we can return to kernel processes
-        "pop r15", // restore callee-saved registers
-        "pop r14",
-        "pop r13",
-        "pop r12",
-        "pop rbx",
-        "pop rbp",
-        "pop r11",
-        "pop rcx",
-        "pop r10",
-        "mov rsp, r10",
-        "sysretq",
+        push_all!(),
+        "mov r9, rsp",
+        "push r9",
+        "  call handler", // Return value is in RAX
+        "  push rax",
+        "    call get_code_selector",
+        "    push rax",
+        "      call get_data_selector",
+        "    pop rbx",
+        "    mov rcx, rax", // struct is in RBX+RCX now
+        "  pop rax",        // We get the syscall value back
+        "pop r9",           // We get the register state value back
+        // Preparing iretq
+        "push rcx",           // data selector
+        "push [r9 + 40]",     // process stack pointer
+        "mov r11, [r9 + 32]", // rflags
+        "or r11, 0x200",
+        "and r11, 0xffffffffffffbfff",
+        "push r11",       // rflags
+        "push rbx",       // code selector
+        "push [r9 + 96]", // instruction address to return to
+        "push rax",       // We want to keep the RAX
+        mov_all!(),
+        "pop rax",
+        "iretq",
         options(noreturn)
     );
 }
 
 #[no_mangle]
-extern "C" fn handler(name: SysCallName, arg1: u64, arg2: u64) {
+extern "C" fn handler(name: SysCallName, arg1: u64, arg2: u64) -> u64 {
     // This block executes after saving the user state and before returning back
-    serial_println!("syscall {:#?}", name);
-    call_syscall(name as u64 as u16, arg1, arg2);
+    call_syscall(name as u64 as u16, arg1, arg2)
+}
+
+// TODO: Try to combine both of these functions to make it faster.
+#[no_mangle]
+extern "C" fn get_code_selector() -> u64 {
+    with_kernel_memory(|| {
+        let thread = get_scheduler().running_thread.clone().unwrap();
+        let thread = thread.as_ref().borrow();
+        let process = thread.process.as_ref().borrow();
+        if process.kernel_process {
+            (GDT.1.kernel_code_selector.index() * 8) as u64
+        } else {
+            ((GDT.1.user_code_selector.index() * 8) | 3) as u64
+        }
+    })
+}
+
+#[no_mangle]
+extern "C" fn get_data_selector() -> u64 {
+    with_kernel_memory(|| {
+        let thread = get_scheduler().running_thread.clone().unwrap();
+        let thread = thread.as_ref().borrow();
+        let process = thread.process.as_ref().borrow();
+        if process.kernel_process {
+            (GDT.1.kernel_data_selector.index() * 8) as u64
+        } else {
+            ((GDT.1.user_data_selector.index() * 8) | 3) as u64
+        }
+    })
 }

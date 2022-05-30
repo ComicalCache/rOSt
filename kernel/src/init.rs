@@ -2,9 +2,12 @@ use alloc::vec::Vec;
 use bootloader::BootInfo;
 use lazy_static::lazy_static;
 use spin::Mutex;
+use test_framework::serial_println;
 
 use crate::{
-    interrupts, memory,
+    interrupts::{self, syscalls::register_syscall},
+    memory,
+    processes::get_scheduler,
     structures::{
         driver::{Driver, Registrator},
         kernel_information::KernelInformation,
@@ -18,6 +21,28 @@ lazy_static! {
     static ref INITIALIZED_DRIVERS: Mutex<Vec<Driver>> = Mutex::new(Vec::new());
 }
 
+extern "C" fn test_syscall(a: u64, b: u64) -> u64 {
+    let thr = get_scheduler().running_thread.clone().unwrap();
+    let thread = thr.as_ref().borrow();
+    serial_println!(
+        "Syscall 0 from process {} and thread {}",
+        thread.process.as_ref().borrow().id,
+        thread.id
+    );
+    0
+}
+
+extern "C" fn test_syscall2(a: u64, b: u64) -> u64 {
+    let thr = get_scheduler().running_thread.clone().unwrap();
+    let thread = thr.as_ref().borrow();
+    serial_println!(
+        "Syscall 1 from process {} and thread {}",
+        thread.process.as_ref().borrow().id,
+        thread.id
+    );
+    1
+}
+
 /// Initialises the components of the OS, **must** be called before any other functions.
 pub fn init(boot_info: &'static BootInfo) -> KernelInformation {
     debug::print_memory_map(&boot_info.memory_regions);
@@ -28,6 +53,9 @@ pub fn init(boot_info: &'static BootInfo) -> KernelInformation {
     interrupts::init_idt();
     interrupts::syscalls::setup_syscalls();
     interrupts::enable();
+
+    register_syscall(0, test_syscall);
+    register_syscall(1, test_syscall2);
 
     kernel_info
 }
