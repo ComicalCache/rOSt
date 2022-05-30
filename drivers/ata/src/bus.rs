@@ -171,6 +171,8 @@ impl ATABus {
         master: bool,
         lba: u64,
     ) -> Result<[u8; 512], ErrorRegisterFlags> {
+        // TODO Add LBA48 support to the ATA driver
+        // We need to check the IO calls for LBA48 support
         if lba > u32::MAX.into() {
             todo!("LBA48 not supported");
         }
@@ -200,6 +202,8 @@ impl ATABus {
         lba: u64,
         buffer: &[u8; 512],
     ) -> Result<(), ErrorRegisterFlags> {
+        // TODO Add LBA48 support to the ATA driver
+        // We need to check the IO calls for LBA48 support
         if lba > u32::MAX.into() {
             todo!("LBA48 not supported");
         }

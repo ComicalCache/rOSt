@@ -317,6 +317,7 @@ fn log2(value: usize) -> u8 {
         2 => 1,
         3 => 2,
         4 => 2,
-        _ => todo!("log2 needs more values"),
+        // Low chance of getting that, screens generally don't support over 4 bytes per pixel
+        _ => unimplemented!("log2 needs more values"),
     }
 }
