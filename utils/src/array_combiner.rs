@@ -1,11 +1,13 @@
 use alloc::vec::Vec;
 
+/// A struct that combines multiple arrays into one.
 pub struct Combiner<'a, T: Sized + Default + Copy> {
     size: usize,
     data: Vec<&'a [T]>,
 }
 
 impl<'a, T: Sized + Default + Copy> Combiner<'a, T> {
+    /// Creates a new `Combiner`.
     pub fn new() -> Self {
         Combiner {
             size: 0,
@@ -13,12 +15,17 @@ impl<'a, T: Sized + Default + Copy> Combiner<'a, T> {
         }
     }
 
+    /// Adds a new array to the combiner.
     pub fn with(mut self, data: &'a [T]) -> Self {
         self.size += data.len();
         self.data.push(data);
         self
     }
 
+    /// Combines all arrays into one.
+    ///
+    /// ## Returns
+    /// A result containing all arrays combined in `[T; S]` or None if `S` does not equal the combiners size.
     pub fn build<const S: usize>(self) -> Option<[T; S]> {
         if self.size != S {
             return None;
