@@ -10,3 +10,4 @@ kimage-r = "run --target x86_64-custom.json -Zbuild-std=core,alloc --release -Zb
 krun-r = "run --target x86_64-custom.json -Zbuild-std=core,alloc --release -Zbuild-std-features=compiler-builtins-mem" #release
 ktest = "test --target x86_64-custom.json --bins -Zbuild-std=core,alloc -Zbuild-std-features=compiler-builtins-mem"
 ktest_all = ["ktest"]
+kdoc = "doc --target x86_64-custom.json -Zbuild-std=core,alloc -Zbuild-std-features=compiler-builtins-mem"
