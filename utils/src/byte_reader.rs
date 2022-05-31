@@ -1,9 +1,11 @@
+/// A struct allowing to read chunks of a slice.
 pub struct ByteReader<'a> {
     buffer: &'a [u8],
     position: usize,
 }
 
 impl<'a> ByteReader<'a> {
+    /// Creates a new `ByteReader` containing the given buffer.
     pub fn of(buffer: &'a [u8]) -> Self {
         ByteReader {
             buffer,
@@ -11,12 +13,14 @@ impl<'a> ByteReader<'a> {
         }
     }
 
+    /// Reads 1 byte from the buffer.
     pub fn read_u8(&mut self) -> u8 {
         let value = self.buffer[self.position];
         self.position += 1;
         value
     }
 
+    /// Reads a 2 bytes from the buffer.
     pub fn read_u16(&mut self) -> u16 {
         let value =
             u16::from_le_bytes([self.buffer[self.position], self.buffer[self.position + 1]]);
@@ -24,6 +28,7 @@ impl<'a> ByteReader<'a> {
         value
     }
 
+    /// Reads 4 bytes from the buffer.
     pub fn read_u32(&mut self) -> u32 {
         let value = u32::from_le_bytes([
             self.buffer[self.position],
@@ -35,6 +40,7 @@ impl<'a> ByteReader<'a> {
         value
     }
 
+    /// Reads 1 bytes from the buffer and converts it to an enum value.
     pub fn read_enum_u8<T>(&mut self) -> T
     where
         T: From<u8>,
@@ -42,6 +48,7 @@ impl<'a> ByteReader<'a> {
         T::from(self.read_u8())
     }
 
+    /// Reads 2 bytes from the buffer and converts it to an enum value.
     pub fn read_enum_u16<T>(&mut self) -> T
     where
         T: From<u16>,
@@ -49,6 +56,7 @@ impl<'a> ByteReader<'a> {
         T::from(self.read_u16())
     }
 
+    /// Reads 4 bytes from the buffer and converts it to an enum value.
     pub fn read_enum_u32<T>(&mut self) -> T
     where
         T: From<u32>,
@@ -56,6 +64,7 @@ impl<'a> ByteReader<'a> {
         T::from(self.read_u32())
     }
 
+    /// Reads a slice of the given length from the buffer.
     pub fn read_slice<const L: usize>(&mut self) -> [u8; L] {
         let value = &self.buffer[self.position..self.position + L];
         self.position += L;
