@@ -13,7 +13,6 @@ pub mod constants;
 use crate::constants::{GIB, KIB, MIB};
 pub mod port_extensions;
 pub mod static_stack;
-pub mod syscall_name;
 
 /// Formats the size in bytes to a human readable string.
 pub fn format_size(bytes: u64) -> String {

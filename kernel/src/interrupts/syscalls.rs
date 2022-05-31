@@ -1,9 +1,11 @@
 use lazy_static::lazy_static;
 use spin::Mutex;
-use utils::syscall_name::SysCallName;
 use x86_64::VirtAddr;
 
-use crate::{debug, memory::with_kernel_memory, processes::get_scheduler};
+use crate::{
+    debug, interrupts::syscall_name::SysCallName, memory::with_kernel_memory,
+    processes::get_scheduler,
+};
 
 use super::gdt::GDT;
 use core::arch::asm;

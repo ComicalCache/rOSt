@@ -11,6 +11,7 @@ mod gdt;
 mod pic_handlers;
 pub use gdt::{reload_gdt, GDT};
 mod pic;
+pub(crate) mod syscall_name;
 pub mod syscalls;
 
 use crate::debug;
