@@ -22,9 +22,9 @@ jobs:
       with:
         filters: |
           src:
-            - '*.rs'
-            - '*.toml'
-            - '*.json'
+            - '**/*.rs'
+            - '**/*.toml'
+            - '**/*.json'
 
   build:
     runs-on: ubuntu-latest
