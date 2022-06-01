@@ -10,12 +10,12 @@ use x86_64::{
     VirtAddr,
 };
 
-use super::{allocator::ALLOCATOR, frame_allocator::FullFrameAllocator};
+use super::{allocator::ALLOCATOR, frame_allocator::BitmapFrameAllocator};
 
 /// maps the kernels heap memory area to physical addresses
 pub fn init_heap(
     mapper: &mut impl Mapper<Size2MiB>,
-    frame_allocator: &mut FullFrameAllocator,
+    frame_allocator: &mut BitmapFrameAllocator,
 ) -> Result<(), MapToError<Size2MiB>> {
     let page_range = {
         let heap_start = VirtAddr::new(HEAP_START as u64);
