@@ -3,7 +3,7 @@ use bootloader::BootInfo;
 use x86_64::VirtAddr;
 
 use super::{
-    frame_allocator::FullFrameAllocator,
+    frame_allocator::BitmapFrameAllocator,
     heap::init_heap,
     page_table::{self, MEMORY_MAPPER},
 };
@@ -17,7 +17,7 @@ pub fn init(boot_info: &'static BootInfo) {
             .expect("physical memory mapping not set"),
     );
     unsafe { page_table::init(pmo) };
-    let mut frame_allocator = unsafe { FullFrameAllocator::init(&boot_info.memory_regions) };
+    let mut frame_allocator = BitmapFrameAllocator::init(&boot_info);
     let mut mapper = MEMORY_MAPPER.lock();
     init_heap(mapper.as_mut().unwrap(), &mut frame_allocator).expect("heap initialization failed");
     debug::log("Heap initialized");

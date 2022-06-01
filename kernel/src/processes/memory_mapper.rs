@@ -5,12 +5,12 @@ use x86_64::{
     PhysAddr,
 };
 
-use crate::{debug, memory::FullFrameAllocator};
+use crate::{debug, memory::frame_allocator::BitmapFrameAllocator};
 
 /// Initializes and returns the level-4 page table that maps memory for a user-mode process.
 pub unsafe fn get_user_mode_mapping(
     pmo: u64,
-    allocator: FullFrameAllocator,
+    allocator: BitmapFrameAllocator,
 ) -> Option<(PhysFrame, PhysAddr)> {
     debug::log("Creating user mode mapping");
     let mut allocator = allocator;
