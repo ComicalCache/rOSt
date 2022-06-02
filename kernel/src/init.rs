@@ -5,13 +5,13 @@ use spin::Mutex;
 use test_framework::serial_println;
 
 use crate::{
-    interrupts::{self, syscalls::register_syscall},
-    memory,
+    interrupts, memory,
     processes::get_scheduler,
     structures::{
         driver::{Driver, Registrator},
         kernel_information::KernelInformation,
     },
+    syscalls::{self, register_syscall},
 };
 
 use crate::debug;
@@ -51,7 +51,7 @@ pub fn init(boot_info: &'static BootInfo) -> KernelInformation {
     let kernel_info = KernelInformation::new(boot_info);
     interrupts::reload_gdt();
     interrupts::init_idt();
-    interrupts::syscalls::setup_syscalls();
+    syscalls::setup_syscalls();
     interrupts::enable();
 
     register_syscall(0, test_syscall);
