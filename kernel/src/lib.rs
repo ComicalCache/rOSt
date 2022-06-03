@@ -32,6 +32,7 @@ pub mod logger;
 mod memory;
 pub mod processes;
 pub mod structures;
+pub mod syscalls;
 
 lazy_static! {
     pub static ref LOGGER: Arc<Mutex<Option<Box<dyn Logger>>>> = Arc::from(Mutex::new(None));
