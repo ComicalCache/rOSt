@@ -20,6 +20,7 @@ utils = { workspace=true }
 kernel = { workspace=true }
 vga = { workspace=true }
 ata = { workspace=true }
+x86_64 = { workspace=true }
 rost-lib = { workspace=true }
 test_framework = { workspace=true }
 bootloader = { workspace=true }

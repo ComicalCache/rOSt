@@ -7,7 +7,6 @@ edition = { workspace=true }
 
 [dependencies]
 utils = { workspace=true }
-test_framework = { workspace=true }
 bootloader = { workspace=true }
 spin = { workspace=true }
 x86_64 = { workspace=true }

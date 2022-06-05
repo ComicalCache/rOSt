@@ -8,7 +8,6 @@ edition = "2021"
 [dependencies]
 utils = { workspace=true }
 kernel = { workspace=true }
-test_framework = { workspace=true }
 x86_64 = { workspace=true }
 spin = { workspace=true }
 bitflags = { workspace=true }

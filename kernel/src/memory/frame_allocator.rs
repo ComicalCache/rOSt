@@ -3,7 +3,7 @@ use bootloader::{
     BootInfo,
 };
 use spin::Mutex;
-use test_framework::serial_println;
+use utils::serial_println;
 use x86_64::{
     structures::paging::{
         FrameAllocator, FrameDeallocator, PageSize, PhysFrame, Size2MiB, Size4KiB,

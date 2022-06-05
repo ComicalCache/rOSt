@@ -1,9 +1,12 @@
 use crate::{
     ansi_colors::Yellow,
     qemu_exit::{exit_qemu, QemuExitCode},
-    serial_println,
     testable::Testable,
 };
+use kernel::structures::kernel_information::KernelInformation;
+use utils::serial_println;
+
+pub static mut KERNEL_INFO: Option<KernelInformation> = None;
 
 /// Rusts test runner function that is called to run all annotated tests.
 #[allow(dead_code)]
@@ -17,7 +20,7 @@ pub fn test_runner(tests: &[&dyn Testable]) {
             Yellow("test(s):")
         );
         for test in tests {
-            test.run();
+            test.run(unsafe { KERNEL_INFO }.clone().unwrap());
         }
     }
 

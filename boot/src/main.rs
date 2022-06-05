@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-const RUN_ARGS: &[&str] = &["--no-reboot", "-s"];
+const RUN_ARGS: &[&str] = &["--no-reboot", "-s", "-serial", "stdio"];
 const TEST_ARGS: &[&str] = &[
     "-device",
     "isa-debug-exit,iobase=0xf4,iosize=0x04",
@@ -40,7 +40,6 @@ fn main() {
     }
     let mut run_cmd = Command::new("qemu-system-x86_64");
     run_cmd
-        .args(["-serial", "stdio"])
         .args(["-m", "256"])
         .args(["-hda", &bios.display().to_string()])
         /*.args(["-drive", "if=none,id=disk,file=test_disk.img"])

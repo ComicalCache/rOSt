@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 use bootloader::BootInfo;
 use lazy_static::lazy_static;
 use spin::Mutex;
-use test_framework::serial_println;
+use utils::serial_println;
 
 use crate::{
     interrupts, memory,

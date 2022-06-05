@@ -15,16 +15,15 @@ extern crate alloc;
 use bootloader::{entry_point, BootInfo};
 use core::{arch::asm, panic::PanicInfo};
 use kernel::structures::kernel_information::KernelInformation;
-use test_framework::serial_println;
 use tinytga::RawTga;
-use utils::constants::MIB;
+use utils::{constants::MIB, serial_println};
 use vga::vga_core::{Clearable, ImageDrawable};
 
 use core::alloc::Layout;
 
 entry_point!(kernel);
 pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
-    let mut kernel_info = kernel::init(boot_info);
+    let kernel_info = kernel::init(boot_info);
     bootup_sequence(kernel_info);
 
     #[cfg(test)]
@@ -143,28 +142,62 @@ pub fn kernel_main(kernel_info: &mut KernelInformation) {
     */
 }
 
-/// Panic handler for the OS.
-#[cfg(not(test))]
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    kernel::panic_handler(info);
-}
-
 /// This is the main function for tests.
 #[cfg(test)]
 pub fn kernel_test(_kernel_info: KernelInformation) {
-    test_main();
-}
+    use test_framework::test_runner::KERNEL_INFO;
 
-/// Panic handler for the OS in test mode.
-#[cfg(test)]
-#[panic_handler]
-// this function is called if a panic occurs and it is a test, all output is redirected to the serial port
-fn panic(info: &PanicInfo) -> ! {
-    kernel::test_panic_handler(info);
+    unsafe { KERNEL_INFO = Some(_kernel_info) };
+    test_main();
 }
 
 #[alloc_error_handler]
 fn alloc_error_handler(layout: Layout) -> ! {
     panic!("allocation error: {:?}", layout)
+}
+
+#[cfg(not(test))]
+#[panic_handler]
+pub fn panic_handler(info: &PanicInfo) -> ! {
+    use test_framework::ansi_colors;
+
+    serial_println!("{}\n", ansi_colors::Red("[PANIC]"));
+    serial_println!("Error: {}\n", info);
+    kernel::hlt_loop();
+}
+
+#[cfg(test)]
+#[panic_handler]
+pub fn test_panic_handler(info: &PanicInfo) -> ! {
+    use test_framework::{
+        ansi_colors,
+        qemu_exit::{exit_qemu, QemuExitCode},
+    };
+
+    serial_println!("{}\n", ansi_colors::Red("[PANIC]"));
+    serial_println!("Error: {}\n", info);
+    exit_qemu(QemuExitCode::Failed);
+
+    kernel::hlt_loop();
+}
+
+#[cfg(test)]
+mod tests {
+    use alloc::boxed::Box;
+    use kernel::structures::kernel_information::KernelInformation;
+    use x86_64::structures::paging::Size4KiB;
+
+    #[test_case]
+    fn should_allocate_box(_: KernelInformation) {
+        let boxed = Box::new(4);
+        assert_eq!(4, *boxed);
+    }
+
+    #[test_case]
+    fn should_allocate_frame(kernel_information: KernelInformation) {
+        use x86_64::structures::paging::{FrameAllocator, PhysFrame};
+        let mut allocator = kernel_information.allocator;
+        let frame: Option<PhysFrame<Size4KiB>> = allocator.allocate_frame();
+        assert!(frame.is_some());
+    }
 }

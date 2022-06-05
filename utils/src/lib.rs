@@ -12,6 +12,7 @@ pub mod byte_reader;
 pub mod constants;
 use crate::constants::{GIB, KIB, MIB};
 pub mod port_extensions;
+pub mod serial;
 pub mod static_stack;
 
 /// Formats the size in bytes to a human readable string.

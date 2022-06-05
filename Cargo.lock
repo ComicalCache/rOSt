@@ -10,7 +10,6 @@ dependencies = [
  "kernel",
  "lazy_static",
  "spin 0.9.3",
- "test_framework",
  "utils",
  "x86_64",
 ]
@@ -117,7 +116,6 @@ dependencies = [
  "pc-keyboard",
  "pic8259",
  "spin 0.9.3",
- "test_framework",
  "uart_16550",
  "utils",
  "x86_64",
@@ -215,6 +213,7 @@ dependencies = [
  "tinytga",
  "utils",
  "vga",
+ "x86_64",
 ]
 
 [[package]]
@@ -322,9 +321,8 @@ dependencies = [
 name = "test_framework"
 version = "0.1.0"
 dependencies = [
- "lazy_static",
- "spin 0.9.3",
- "uart_16550",
+ "kernel",
+ "utils",
  "x86_64",
 ]
 
@@ -379,6 +377,9 @@ checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
 name = "utils"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
+ "spin 0.9.3",
+ "uart_16550",
  "x86_64",
 ]
 
