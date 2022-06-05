@@ -4,7 +4,7 @@ use bootloader::{
 };
 use x86_64::PhysAddr;
 
-use crate::{debug, memory::FullFrameAllocator};
+use crate::{debug, memory::frame_allocator::BitmapFrameAllocator};
 
 #[derive(Clone, Copy)]
 #[repr(C)]
@@ -19,7 +19,7 @@ pub struct KernelInformation {
     /// A map of the physical memory regions of the underlying machine.
     pub memory_regions: &'static MemoryRegions,
 
-    pub allocator: FullFrameAllocator,
+    pub allocator: BitmapFrameAllocator,
 
     /// The start address of the kernel space in all page maps
     pub kernel_start: PhysAddr,
@@ -90,6 +90,8 @@ impl KernelInformation {
             Some(framebuffer) => Optional::Some(KernelFrameBuffer::new(framebuffer)),
             None => Optional::None,
         };
+        debug::log("Creating allocator");
+        let allocator = BitmapFrameAllocator::init(&boot_info);
         debug::log("Obtained kernel info");
         KernelInformation {
             bootloader_version,
@@ -99,7 +101,7 @@ impl KernelInformation {
                 .expect("No physical memory mapping"),
             framebuffer,
             memory_regions: &boot_info.memory_regions,
-            allocator: unsafe { FullFrameAllocator::init(&boot_info.memory_regions) },
+            allocator,
             kernel_start: PhysAddr::new(0x007F_C000_0000u64),
         }
     }

@@ -7,12 +7,10 @@
 mod cpu_handlers;
 mod interrupt_register;
 pub use interrupt_register::init_idt;
-mod gdt;
+pub(crate) mod gdt;
 mod pic_handlers;
 pub use gdt::{reload_gdt, GDT};
 mod pic;
-pub(crate) mod syscall_name;
-pub mod syscalls;
 
 use crate::debug;
 

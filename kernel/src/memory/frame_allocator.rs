@@ -1,73 +1,328 @@
-use bootloader::boot_info::{MemoryRegionKind, MemoryRegions};
+use bootloader::{
+    boot_info::{MemoryRegionKind, MemoryRegions},
+    BootInfo,
+};
 use spin::Mutex;
+use test_framework::serial_println;
 use x86_64::{
-    structures::paging::{FrameAllocator, PageSize, PhysFrame},
-    PhysAddr,
+    structures::paging::{
+        FrameAllocator, FrameDeallocator, PageSize, PhysFrame, Size2MiB, Size4KiB,
+    },
+    PhysAddr, VirtAddr,
 };
 
-/// A FrameAllocator that returns usable frames from the bootloader's memory map.
-#[derive(Clone, Copy)]
+use lazy_static::lazy_static;
+
+lazy_static! {
+    /// The maximum size of usable memory is 64GiB with this bitflag.
+    /// Have to pre-allocate one 4K frame and one 2M frame.
+    static ref TWO_MEGABYTES_FRAMES_BITFLAG: Mutex<Option<&'static mut [u64; 512]>> =
+        Mutex::new(None);
+    static ref FOUR_KILOBYTES_FRAMES_BITFLAG: Mutex<Option<&'static mut [u64; 262_144]>> =
+        Mutex::new(None);
+}
+
+/// A Frame Allocator that allocates according to the usage bitmap of the memory.
 #[repr(C)]
-pub struct FullFrameAllocator {
+#[derive(Clone, Copy)]
+pub struct BitmapFrameAllocator {
     memory_map: &'static MemoryRegions,
 }
 
-static FRAME_NEXT: Mutex<usize> = Mutex::new(0);
-static FRAME_REGION: Mutex<usize> = Mutex::new(usize::MAX);
+impl BitmapFrameAllocator {
+    /// Creates a FrameAllocator from the passed memory map.
+    pub fn init(boot_info: &'static BootInfo) -> Self {
+        let memory_map = &boot_info.memory_regions;
 
-impl FullFrameAllocator {
-    /// Create a FrameAllocator from the passed memory map.
-    ///
-    /// ## Safety
-    /// This function is unsafe because the caller must guarantee that the passed
-    /// memory map is valid. The main requirement is that all frames that are marked
-    /// as `USABLE` in it are really unused.
-    pub unsafe fn init(memory_map: &'static MemoryRegions) -> Self {
-        let mut region_index = FRAME_REGION.lock();
+        if TWO_MEGABYTES_FRAMES_BITFLAG.lock().is_some() {
+            // Frames already allocated
+            BitmapFrameAllocator { memory_map }
+        } else {
+            let pmo = boot_info.physical_memory_offset.as_ref().unwrap();
 
-        // initialise FRAME_REGION with the first usable region
-        if *region_index == usize::MAX {
-            *region_index = memory_map
+            // We first need to take a 2M frame and 2x4K frames from the memory map for the bitflags.
+            let usable_memory_region = memory_map
                 .iter()
-                .enumerate()
-                .find(|(_, region)| region.kind == MemoryRegionKind::Usable)
-                .expect("No usable memory found")
-                .0;
+                .filter(|region| region.kind == MemoryRegionKind::Usable)
+                .nth(0)
+                .unwrap();
+
+            let (four_kilobytes_frames_bitflag, two_megabyte_frames_bitflag) =
+                get_bitflag_frames(PhysAddr::new(usable_memory_region.start));
+
+            *FOUR_KILOBYTES_FRAMES_BITFLAG.lock() = Some(unsafe {
+                VirtAddr::new(four_kilobytes_frames_bitflag.start_address().as_u64() + pmo)
+                    .as_mut_ptr::<[u64; 262144]>()
+                    .as_mut()
+                    .expect("Cannot allocate the 2M frame")
+            });
+            *TWO_MEGABYTES_FRAMES_BITFLAG.lock() = Some(unsafe {
+                VirtAddr::new(two_megabyte_frames_bitflag.start_address().as_u64() + pmo)
+                    .as_mut_ptr::<[u64; 512]>()
+                    .as_mut()
+                    .expect("Cannot allocate the 4K frame")
+            });
+
+            let mut allocator = BitmapFrameAllocator { memory_map };
+
+            // We set everything as used because BIOS may return holes in the memory map.
+            for frame in 0..32768 {
+                allocator.set_used(frame << 21, Size2MiB::SIZE);
+            }
+
+            // Now we need to set the usable memory regions as unused so they're not allocated.
+            for region in memory_map
+                .iter()
+                .filter(|region| region.kind == MemoryRegionKind::Usable)
+            {
+                let start = PhysFrame::containing_address(
+                    PhysAddr::new(region.start).align_up(Size4KiB::SIZE),
+                );
+                let end = PhysFrame::containing_address(
+                    PhysAddr::new(region.end - 1).align_down(Size4KiB::SIZE),
+                );
+                let frame_range = PhysFrame::<Size4KiB>::range_inclusive(start, end);
+                serial_println!(
+                    "Unused memory from {:X} to {:X}",
+                    start.start_address().as_u64(),
+                    end.start_address().as_u64() + Size4KiB::SIZE as u64
+                );
+                frame_range.for_each(|f| {
+                    allocator
+                        .set_unused(f.start_address().as_u64(), Size4KiB::SIZE)
+                        .expect("Failed setting memory regions as unused");
+                });
+            }
+
+            allocator.set_used(
+                four_kilobytes_frames_bitflag.start_address().as_u64(),
+                Size2MiB::SIZE,
+            );
+            allocator.set_used(
+                two_megabyte_frames_bitflag.start_address().as_u64(),
+                Size4KiB::SIZE,
+            );
+
+            allocator
         }
-        FullFrameAllocator { memory_map }
+    }
+
+    /// Unconditionally sets the frame at the start_address as used in the bitflags
+    fn set_used(&mut self, start_address: u64, size: u64) -> Option<()> {
+        match size {
+            Size2MiB::SIZE => {
+                // Align to 2M frame.
+                let start_address = start_address >> 21;
+
+                // The index in the bitflags
+                let index = (start_address >> 6) as usize;
+
+                // We set the flag for the frame to 1
+                let mut mbl = TWO_MEGABYTES_FRAMES_BITFLAG.lock();
+                let value = mbl.as_mut()?[index];
+                if value == value | (1 << (start_address & 63)) {
+                    panic!(
+                        "2M Frame at {} bit {} already set as used",
+                        index,
+                        start_address & 63
+                    );
+                }
+                mbl.as_mut()?[index] |= 1 << (start_address & 63);
+
+                // Now we need to set all the 4K frames in this 2M frame as used.
+                let mut fbl = FOUR_KILOBYTES_FRAMES_BITFLAG.lock();
+                let four_kilobytes_frames_bitflag_lock = fbl.as_mut()?;
+                for i in (start_address << 3)..((start_address << 3) + 8) {
+                    four_kilobytes_frames_bitflag_lock[i as usize] = u64::MAX;
+                }
+            }
+            Size4KiB::SIZE => {
+                // Align to 4K frame.
+                let start_address = start_address >> 12;
+
+                // The index in the bitflags
+                let index = (start_address >> 6) as usize;
+
+                // We set the flag for the frame to 1
+                let mut fbl = FOUR_KILOBYTES_FRAMES_BITFLAG.lock();
+                let four_kilobytes_frames_bitflag_lock = fbl.as_mut()?;
+                let value = four_kilobytes_frames_bitflag_lock[index];
+                if value == value | (1 << (start_address & 63)) {
+                    panic!(
+                        "4K Frame at {} bit {} already set as used",
+                        index,
+                        start_address & 63
+                    );
+                }
+                four_kilobytes_frames_bitflag_lock[index] |= 1 << (start_address & 63);
+
+                // Now we need to set the 2M frame as used
+                let start_address = start_address >> 9;
+                let index = (start_address >> 6) as usize;
+                TWO_MEGABYTES_FRAMES_BITFLAG.lock().as_mut()?[index] |= 1 << (start_address & 63);
+            }
+            _ => todo!("Implement 1G frame bitflags"),
+        }
+        Some(())
+    }
+
+    /// Unconditionally sets the frame at the start_address as unused in the bitflags
+    fn set_unused(&mut self, start_address: u64, size: u64) -> Option<()> {
+        match size {
+            Size2MiB::SIZE => {
+                // Align to 2M frame.
+                let start_address = start_address >> 21;
+
+                // The index in the bitflags
+                let index = (start_address >> 6) as usize;
+
+                // We set the flag for the frame to 1
+                let mut mbl = TWO_MEGABYTES_FRAMES_BITFLAG.lock();
+                let value = mbl.as_mut()?[index];
+                if value == value & !(1 << (start_address & 63)) {
+                    panic!(
+                        "2M Frame at {} bit {} already set as unused",
+                        index,
+                        start_address & 63
+                    );
+                }
+                mbl.as_mut()?[index] &= !(1 << (start_address & 63));
+
+                // Now we need to set all the 4K frames in this 2M frame as unused.
+                let mut fbl = FOUR_KILOBYTES_FRAMES_BITFLAG.lock();
+                let four_kilobytes_frames_bitflag_lock = fbl.as_mut()?;
+                for i in (start_address << 3)..((start_address << 3) + 8) {
+                    four_kilobytes_frames_bitflag_lock[i as usize] = 0u64;
+                }
+            }
+            Size4KiB::SIZE => {
+                // Align to 4K frame.
+                let start_address = start_address >> 12;
+
+                // The index in the bitflags
+                let index = (start_address >> 6) as usize;
+
+                // We set the flag for the frame to 1
+                let mut fbl = FOUR_KILOBYTES_FRAMES_BITFLAG.lock();
+                let four_kilobytes_frames_bitflag_lock = fbl.as_mut()?;
+                let value = four_kilobytes_frames_bitflag_lock[index];
+                if value == value & !(1 << (start_address & 63)) {
+                    panic!(
+                        "4K Frame at {} bit {} already set as unused",
+                        index,
+                        start_address & 63
+                    );
+                }
+                four_kilobytes_frames_bitflag_lock[index] &= !(1 << (start_address & 63));
+
+                // If all the 4K frames in the 2M frame are unused, we need to set the 2M frame itself as unused
+                let start_address = start_address >> 9;
+                let index = (start_address >> 6) as usize;
+                if four_kilobytes_frames_bitflag_lock
+                    [(start_address << 3) as usize..((start_address << 3) + 8) as usize]
+                    .iter()
+                    .all(|flags| *flags == 0u64)
+                {
+                    TWO_MEGABYTES_FRAMES_BITFLAG.lock().as_mut()?[index] &=
+                        !(1 << (start_address & 63));
+                }
+            }
+            _ => todo!("Implement 1G frame bitflags"),
+        }
+        Some(())
     }
 }
 
-unsafe impl<S> FrameAllocator<S> for FullFrameAllocator
+impl<S> FrameDeallocator<S> for BitmapFrameAllocator
 where
     S: PageSize,
 {
+    unsafe fn deallocate_frame(&mut self, frame: PhysFrame<S>) {
+        todo!()
+    }
+}
+
+unsafe impl FrameAllocator<Size4KiB> for BitmapFrameAllocator {
     /// Returns the next usable frame
-    fn allocate_frame(&mut self) -> Option<PhysFrame<S>> {
-        let mut next = FRAME_NEXT.lock();
-        let mut region_index = FRAME_REGION.lock();
-        // Get the current region
-        let mut region = self.memory_map.get(*region_index)?;
-        // If we don't have any more pages left in the region...
-        if region.end - region.start < ((*next as u64) + 1) * S::SIZE {
-            // Find the index of a next Usable region
-            *region_index = self
-                .memory_map
+    fn allocate_frame(&mut self) -> Option<PhysFrame<Size4KiB>> {
+        let frame_address: PhysAddr;
+        {
+            let mut fbl = FOUR_KILOBYTES_FRAMES_BITFLAG.lock();
+            let four_kilobytes_frames_bitflag_lock = fbl.as_mut()?;
+
+            // We go through all the 4K frames and find the first free one
+            let free_4k_frame_flag = four_kilobytes_frames_bitflag_lock
                 .iter()
                 .enumerate()
-                .filter(|(i, _)| i > &region_index)
-                .find(|(_, region)| region.kind == MemoryRegionKind::Usable)
-                .map(|(i, _)| i)?;
-            // Use the new region
-            *next = 0;
-            region = self.memory_map.get(*region_index)?;
+                .find(|(_, flag)| **flag != u64::MAX)?;
+
+            // We get the position of the free 4K frame
+            let free_4k_frame = free_4k_frame_flag.1.trailing_ones() as usize
+                + (free_4k_frame_flag.0 << 6) as usize;
+
+            // We set the 4K frame as used
+            frame_address = PhysAddr::new((free_4k_frame as u64) << 12);
         }
-        // According to the Rust community, step_by+nth should be O(1)
-        let phys_frame = (region.start..region.end)
-            .step_by(S::SIZE as usize)
-            .nth(*next)
-            .map(|addr| PhysFrame::containing_address(PhysAddr::new(addr)))?;
-        *next += 1;
-        Some(phys_frame)
+        self.set_used(frame_address.as_u64(), Size4KiB::SIZE)?;
+        PhysFrame::from_start_address(frame_address).ok()
     }
+}
+
+unsafe impl FrameAllocator<Size2MiB> for BitmapFrameAllocator {
+    /// Returns the next usable frame
+    fn allocate_frame(&mut self) -> Option<PhysFrame<Size2MiB>> {
+        let frame_address: PhysAddr;
+        {
+            let mut mbl = TWO_MEGABYTES_FRAMES_BITFLAG.lock();
+            let two_megabytes_frames_bitflag_lock = mbl.as_mut()?;
+
+            // First we iterate through the negated 2M flags to find a 2M frame with free slots inside
+            let free_2m_frame = two_megabytes_frames_bitflag_lock
+                .iter()
+                .enumerate()
+                .find(|(_, flag)| **flag != u64::MAX)?;
+
+            // We get the position of the free 2M frame
+            let free_2m_frame =
+                free_2m_frame.1.trailing_ones() as usize + (free_2m_frame.0 << 6) as usize;
+
+            // We set the 2M frame as used
+            frame_address = PhysAddr::new((free_2m_frame as u64) << 21);
+        }
+        self.set_used(frame_address.as_u64(), Size2MiB::SIZE)?;
+        PhysFrame::from_start_address(frame_address).ok()
+    }
+}
+
+/// Allocates the frames required for the frame allocator.
+///
+/// Chicken and egg?
+fn get_bitflag_frames(start_address: PhysAddr) -> (PhysFrame<Size2MiB>, PhysFrame<Size4KiB>) {
+    let four_kilobytes_frames_bitflag: PhysFrame<Size2MiB>;
+    let two_megabyte_frames_bitflag: PhysFrame<Size4KiB>;
+    // We need to allocate one 2M frame and 2x4K frames, but the region addresses do not have to be 2M aligned!
+    // So first we need to check the alignment, and we have 3 options here:
+    // 1. The start address is 2M aligned - we allocate the 2M frame then 2x4K frames, easy.
+    // 2. The start address + 4K is 2M aligned - we allocate one 4K frame first, then 2M, then the other 4K after it.
+    // 3. The start address is not 2M aligned at all - we allocate both 4K frames, then we allocate the 2M frame aligned wherever it is.
+    if start_address.is_aligned(Size2MiB::SIZE) {
+        four_kilobytes_frames_bitflag = PhysFrame::<Size2MiB>::from_start_address(start_address)
+            .expect("2M frame address not aligned");
+        two_megabyte_frames_bitflag =
+            PhysFrame::<Size4KiB>::from_start_address(start_address + Size2MiB::SIZE)
+                .expect("4K frame address not aligned");
+    } else if (start_address + Size4KiB::SIZE).is_aligned(Size2MiB::SIZE) {
+        four_kilobytes_frames_bitflag =
+            PhysFrame::<Size2MiB>::from_start_address(start_address + Size4KiB::SIZE)
+                .expect("2M frame address not aligned");
+        two_megabyte_frames_bitflag = PhysFrame::<Size4KiB>::from_start_address(start_address)
+            .expect("4K frame address not aligned");
+    } else {
+        four_kilobytes_frames_bitflag =
+            PhysFrame::<Size2MiB>::from_start_address(start_address.align_up(Size2MiB::SIZE))
+                .expect("2M frame address not aligned");
+        two_megabyte_frames_bitflag = PhysFrame::<Size4KiB>::from_start_address(start_address)
+            .expect("4K frame address not aligned");
+    }
+    (four_kilobytes_frames_bitflag, two_megabyte_frames_bitflag)
 }

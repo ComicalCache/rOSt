@@ -13,7 +13,7 @@ pub extern "x86-interrupt" fn page_fault_handler(
 
     serial_println!("EXCEPTION: PAGE FAULT");
     serial_println!("{:?}", error_code);
-    serial_println!("Page: {:?}", Cr2::read_raw());
+    serial_println!("Page: {:X?}", Cr2::read_raw());
     serial_println!("{:#?}", stack_frame);
     hlt_loop();
 }
