@@ -4,7 +4,6 @@ use spin::Mutex;
 pub const PIC_1_OFFSET: u8 = 32;
 pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
 
-/// Stores the interrupt address for a given interrupt type
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 /// Stores the interrupt address for a given interrupt type

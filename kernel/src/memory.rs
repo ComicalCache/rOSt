@@ -42,9 +42,12 @@ pub(crate) fn with_kernel_memory<T, V>(action: T) -> V
 where
     T: Fn() -> V,
 {
+    // save the current paging table
     let cr3 = Cr3::read().0.start_address();
     switch_to_kernel_memory();
     let result = action();
+
+    // restore the paging table
     unsafe {
         Cr3::write(
             PhysFrame::from_start_address_unchecked(cr3),

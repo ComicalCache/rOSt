@@ -10,10 +10,17 @@ use crate::{debug, memory::FullFrameAllocator};
 #[repr(C)]
 pub struct KernelInformation {
     pub bootloader_version: [u16; 3],
+
+    /// Virtual address at which the mapping of the physical memory starts.
     pub physical_memory_offset: u64,
+
     pub framebuffer: Optional<KernelFrameBuffer>,
+
+    /// A map of the physical memory regions of the underlying machine.
     pub memory_regions: &'static MemoryRegions,
+
     pub allocator: FullFrameAllocator,
+
     /// The start address of the kernel space in all page maps
     pub kernel_start: PhysAddr,
 }
@@ -21,11 +28,15 @@ pub struct KernelInformation {
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct KernelFrameBuffer {
+    /// Display dimensions in pixels
     pub width: usize,
     pub height: usize,
+
     pub format: PixelFormat,
     pub bytes_per_pixel: usize,
     pub stride: usize,
+
+    /// The start address of the framebuffer
     pub buffer: *mut u8,
 }
 

@@ -17,6 +17,7 @@ lazy_static! {
 
 /// Initialize a new OffsetPageTable.
 ///
+/// ## Safety
 /// This function is unsafe because the caller must guarantee that the
 /// complete physical memory is mapped to virtual memory at the passed
 /// `physical_memory_offset`. Also, this function must be only called once
@@ -30,6 +31,7 @@ pub unsafe fn init(physical_memory_offset: VirtAddr) {
 
 /// Returns a mutable reference to the active level 4 table.
 ///
+/// ## Safety
 /// This function is unsafe because the caller must guarantee that the
 /// complete physical memory is mapped to virtual memory at the passed
 /// `physical_memory_offset`. Also, this function must be only called once
@@ -44,7 +46,8 @@ unsafe fn active_level_4_table(physical_memory_offset: VirtAddr) -> &'static mut
     &mut *page_table_ptr // unsafe
 }
 
-/// Maps a given virtual page to a given physical address. If a physical address is not given, a frame will be allocated from the FrameAllocator.
+/// Maps a given virtual page to a given physical address.
+/// If a physical address is not given, a frame will be allocated from the FrameAllocator.
 #[allow(dead_code)]
 pub fn create_mapping(
     page: Page<Size2MiB>,
@@ -54,6 +57,8 @@ pub fn create_mapping(
 ) {
     let mut frame_allocator = unsafe { FullFrameAllocator::init(kernel_info.memory_regions) };
     let mut mapper = MEMORY_MAPPER.lock();
+
+    // Either get the specified frame, or the next available one
     let frame = if let Some(address) = address {
         PhysFrame::<Size2MiB>::containing_address(address)
     } else {
@@ -68,5 +73,6 @@ pub fn create_mapping(
             .unwrap()
             .map_to(page, frame, flags, &mut frame_allocator)
     };
+
     map_to_result.expect("map_to failed").flush();
 }

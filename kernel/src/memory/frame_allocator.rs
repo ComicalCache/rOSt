@@ -18,11 +18,14 @@ static FRAME_REGION: Mutex<usize> = Mutex::new(usize::MAX);
 impl FullFrameAllocator {
     /// Create a FrameAllocator from the passed memory map.
     ///
+    /// ## Safety
     /// This function is unsafe because the caller must guarantee that the passed
     /// memory map is valid. The main requirement is that all frames that are marked
     /// as `USABLE` in it are really unused.
     pub unsafe fn init(memory_map: &'static MemoryRegions) -> Self {
         let mut region_index = FRAME_REGION.lock();
+
+        // initialise FRAME_REGION with the first usable region
         if *region_index == usize::MAX {
             *region_index = memory_map
                 .iter()

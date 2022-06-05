@@ -19,21 +19,23 @@ lazy_static! {
 /// Handles a keyboard interrupt.
 pub extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStackFrame) {
     use x86_64::instructions::port::Port;
-    with_kernel_memory(|| {
-        let mut keyboard = KEYBOARD.lock();
-        let mut port = Port::new(PS2_INTERRUPT_CONTROLLER_SCAN_CODE_PORT);
-        let scancode: u8 = unsafe { port.read() };
 
-        if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
-            if let Some(key) = keyboard.process_keyevent(key_event) {
-                match key {
-                    // ! this introduces deadlock potential because print will lock the VgaTextBufferInterface
-                    DecodedKey::Unicode(character) => log_print!("{}", character),
-                    DecodedKey::RawKey(key) => log_print!("{:?}", key),
-                }
+    // with_kernel_memory(|| {
+    let mut keyboard = KEYBOARD.lock();
+    let mut port = Port::new(PS2_INTERRUPT_CONTROLLER_SCAN_CODE_PORT);
+    let scancode: u8 = unsafe { port.read() };
+
+    if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
+        if let Some(key) = keyboard.process_keyevent(key_event) {
+            match key {
+                // ! this introduces deadlock potential because print will lock the VgaTextBufferInterface
+                // DecodedKey::Unicode(character) => log_print!("{}", character),
+                // DecodedKey::RawKey(key) => log_print!("{:?}", key),
+                _ => {}
             }
         }
-    });
+    }
+    // });
 
     unsafe {
         PICS.lock()
