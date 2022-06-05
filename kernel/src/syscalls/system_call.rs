@@ -60,46 +60,60 @@ pub fn register_syscall(syscall_number: u16, handler: SysCallHandlerFunc) {
 /// - the instruction pointer is stored in RCX
 /// - the flags are stored in R11
 /// - the stack pointer is still targeting the user mode stack
-///
-/// To properly handle this, we need to:
-/// 1. save the user mode stack pointer
-/// 2. set the syscall stack pointer
-/// 3. save all the registers we need to preserve on the stack
-/// 4. do our thing with the values we got from the user
-/// 5. restore the registers from the stack
-/// 6. restore the user mode stack pointer
-/// 7. iretq
 #[no_mangle]
 #[naked]
 unsafe extern "C" fn _syscall() -> ! {
     asm!(
+        // We disable the interrupts for the duration of the syscall.
         "cli",
+        // We save the user stack in R10.
         "mov r10, rsp",
-        "mov rsp, 0x007F80014000", // User stack saved in R10, start of kernel stack loaded
+        // We load the start of kernel stack.
+        "mov rsp, 0x007F80014000",
+        // We save the state of the thread to the stack.
         push_all!(),
+        // We save the pointer to the saved thread state (RSP points to the push_all structure).
         "mov r9, rsp",
+        // Then we save that pointer on the stack so we don't lose it when we call functions.
         "push r9",
-        "  call handler", // Return value is in RAX
+        // We call the C abi handler
+        "  call handler",
+        // Return value is in RAX so we save that on the stack
         "  push rax",
         "    call get_code_selector",
         "    push rax",
         "      call get_data_selector",
+        // RAX has the data selector, we pop the code selector to RBX
         "    pop rbx",
-        "    mov rcx, rax", // struct is in RBX+RCX now
-        "  pop rax",        // We get the syscall value back
-        "pop r9",           // We get the register state value back
-        // Preparing iretq
-        "push rcx",           // data selector
-        "push [r9 + 40]",     // process stack pointer
-        "mov r11, [r9 + 32]", // rflags
+        "    mov rcx, rax", // Now the selectors are in RBX & RCX
+        // We get the syscall value (return value from handler) back
+        "  pop rax",
+        // We get the thread state pointer back
+        "pop r9",
+        // We need to use iretq instead of sysret because we want to support Ring 0 processes.
+        // Unfortunately sysret always returns to Ring 3, so we have to use a more complicated method.
+        // Preparing iretq - we have to push a few things on the stack for iretq to work.
+        // Data selector
+        "push rcx",
+        // Process stack pointer
+        "push [r9 + 40]",
+        // Flags - we prepare them so interrupts will be turned on when we return
+        "mov r11, [r9 + 32]",
         "or r11, 0x200",
         "and r11, 0xffffffffffffbfff",
-        "push r11",       // rflags
-        "push rbx",       // code selector
-        "push [r9 + 96]", // instruction address to return to
-        "push rax",       // We want to keep the RAX
+        // Flags
+        "push r11",
+        // Code selector
+        "push rbx",
+        // Instruction address to return to
+        "push [r9 + 96]",
+        // We want to keep the RAX value, so we save it on the stack
+        "push rax",
+        // And we load all the registers from the thread state
         mov_all!(),
+        // And we pop RAX so the thread state is the same except RAX has the return value
         "pop rax",
+        // We return from the syscall
         "iretq",
         options(noreturn)
     );
@@ -127,6 +141,8 @@ extern "C" fn get_code_selector() -> u64 {
     })
 }
 
+// TODO Try to combine both of these functions to make it faster.
+// We should be able to return a C-style struct with two u64s and manage it through ASM.
 #[no_mangle]
 extern "C" fn get_data_selector() -> u64 {
     with_kernel_memory(|| {

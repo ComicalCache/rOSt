@@ -45,13 +45,19 @@ pub fn run_thread(thread: Rc<RefCell<Thread>>) -> ! {
         Rc::decrement_strong_count(Rc::into_raw(thread));
         asm!(
             "mov cr3, r10",
-            "push r14", // data selector
-            "push r12", // process stack pointer
+            // Data selector
+            "push r14",
+            // Process stack pointer
+            "push r12",
+            // Flags
             "or r11, 0x200",
             "and r11, 0xffffffffffffbfff",
-            "push r11", // rflags
-            "push r13", // code selector
-            "push r15", // instruction address to return to
+            // Flags
+            "push r11",
+            // Code selector
+            "push r13",
+            // Instruction address to return to
+            "push r15",
             // Loading register state before jumping into thread
             mov_all!(),
             "iretq",

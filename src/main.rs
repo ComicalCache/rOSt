@@ -80,8 +80,10 @@ fn syscall(rdi: u64, rsi: u64, rdx: u64) -> u64 {
     unsafe {
         let result: u64;
         asm!(
+            // We save the registers that will be mangled by the syscall
             "push r10; push r11; push rcx",
             "syscall",
+            // We restore the mangled registers
             "pop rcx; pop r11; pop r10",
             in("rdi")(rdi),
             in("rsi")(rsi),

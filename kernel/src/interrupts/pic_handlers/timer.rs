@@ -10,10 +10,14 @@ use utils::{pop_all, push_all};
 pub unsafe extern "C" fn _timer() -> ! {
     asm!(
         // We have RFLAGS and RIP on the stack already.
+        // We save full thread state.
         push_all!(),
+        // We save the pointer to the thread state to RDI because RDI is the first argument to C abi function calls
         "mov rdi, rsp",
         "call timer_interrupt_handler",
+        // We restore the thread state
         pop_all!(),
+        // We return from the interrupt
         "iretq",
         options(noreturn)
     );

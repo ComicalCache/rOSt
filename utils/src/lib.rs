@@ -55,6 +55,7 @@ pub fn get_current_tick() -> u64 {
     let start_tick_high: u32;
     unsafe {
         asm!(
+            // This functions sets the EAX-EDX registers to the current CPU tick.
             "rdtsc",
             out("eax")(start_tick_low),
             out("edx")(start_tick_high)
