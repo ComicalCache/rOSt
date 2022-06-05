@@ -21,6 +21,10 @@ lazy_static! {
 }
 
 /// Sets up the LSTAR, FSTAR and STAR model-specific registers so it's possible to use `syscall`.
+///
+/// [OSDev - System calls](https://wiki.osdev.org/System_Calls#Sysenter.2FSysexit_.28Intel.29)
+///
+/// [OSDev - Syscall instruction](https://wiki.osdev.org/Sysenter#AMD:_SYSCALL.2FSYSRET)
 pub(crate) fn setup_syscalls() {
     use x86_64::registers::model_specific;
     use x86_64::registers::model_specific::{Efer, EferFlags};
@@ -60,6 +64,12 @@ pub fn register_syscall(syscall_number: u16, handler: SysCallHandlerFunc) {
 /// - the instruction pointer is stored in RCX
 /// - the flags are stored in R11
 /// - the stack pointer is still targeting the user mode stack
+///
+/// [OSDev - System calls](https://wiki.osdev.org/System_Calls#Sysenter.2FSysexit_.28Intel.29)
+///
+/// [OSDev - Syscall instruction](https://wiki.osdev.org/Sysenter#AMD:_SYSCALL.2FSYSRET)
+///
+/// [Intel manual - IRETQ stack frame structure - points 6.14.3 and 6.14.4](https://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-system-programming-manual-325384.pdf)
 #[no_mangle]
 #[naked]
 unsafe extern "C" fn _syscall() -> ! {
