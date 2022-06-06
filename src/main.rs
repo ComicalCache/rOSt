@@ -29,7 +29,7 @@ pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
     #[cfg(test)]
     kernel_test(kernel_info);
     #[cfg(not(test))]
-    kernel_main(&mut kernel_info);
+    kernel_main(kernel_info);
 
     kernel::hlt_loop();
 }
@@ -91,7 +91,7 @@ fn syscall(rdi: u64, rsi: u64, rdx: u64) -> u64 {
     }
 }
 
-pub fn kernel_main(kernel_info: &mut KernelInformation) {
+pub fn kernel_main(kernel_info: KernelInformation) {
     use kernel::processes::{add_process, run_processes, Process, Thread};
 
     let process1 = add_process(Process::new(user_mode_check_1, kernel_info.clone(), 1));
