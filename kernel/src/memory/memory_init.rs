@@ -9,7 +9,7 @@ use super::{
 };
 
 /// Initializes the page tables and kernel heap memory
-pub fn init(boot_info: &'static BootInfo) {
+pub fn init(boot_info: &'static BootInfo, allocator: &mut BitmapFrameAllocator) {
     let pmo = VirtAddr::new(
         boot_info
             .physical_memory_offset
@@ -17,8 +17,7 @@ pub fn init(boot_info: &'static BootInfo) {
             .expect("physical memory mapping not set"),
     );
     unsafe { page_table::init(pmo) };
-    let mut frame_allocator = BitmapFrameAllocator::init(&boot_info);
     let mut mapper = MEMORY_MAPPER.lock();
-    init_heap(mapper.as_mut().unwrap(), &mut frame_allocator).expect("heap initialization failed");
+    init_heap(mapper.as_mut().unwrap(), allocator).expect("heap initialization failed");
     debug::log("Heap initialized");
 }

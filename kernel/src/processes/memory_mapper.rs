@@ -1,19 +1,20 @@
+use alloc::sync::Arc;
+use internal_utils::FullFrameAllocator;
+use spin::Mutex;
 use x86_64::{
-    structures::paging::{
-        FrameAllocator, PageTable, PageTableFlags, PhysFrame, Size2MiB, Size4KiB,
-    },
+    structures::paging::{PageTable, PageTableFlags, PhysFrame, Size2MiB, Size4KiB},
     PhysAddr,
 };
 
-use crate::{debug, memory::frame_allocator::BitmapFrameAllocator};
+use crate::debug;
 
 /// Initializes and returns the level-4 page table that maps memory for a user-mode process.
 pub unsafe fn get_user_mode_mapping(
     pmo: u64,
-    allocator: BitmapFrameAllocator,
+    allocator: Arc<Mutex<dyn FullFrameAllocator>>,
 ) -> Option<(PhysFrame, PhysAddr)> {
     debug::log("Creating user mode mapping");
-    let mut allocator = allocator;
+    let mut allocator = allocator.lock();
     let level_4_frame: PhysFrame<Size4KiB> = allocator.allocate_frame()?;
     let level_3_frame: PhysFrame<Size4KiB> = allocator.allocate_frame()?;
     let level_2_frame: PhysFrame<Size4KiB> = allocator.allocate_frame()?;

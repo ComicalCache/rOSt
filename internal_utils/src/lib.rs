@@ -5,15 +5,14 @@
 
 use alloc::{format, string::String};
 use core::arch::asm;
+use x86_64::structures::paging::{FrameAllocator, FrameDeallocator, Size2MiB, Size4KiB};
 
 extern crate alloc;
-pub mod array_combiner;
-pub mod byte_reader;
 pub mod constants;
 use crate::constants::{GIB, KIB, MIB};
 pub mod port_extensions;
 pub mod serial;
-pub mod static_stack;
+pub mod structures;
 
 /// Formats the size in bytes to a human readable string.
 pub fn format_size(bytes: u64) -> String {
@@ -68,4 +67,12 @@ pub fn get_current_tick() -> u64 {
 /// Fast division by 255 using additions and shifts.
 pub fn div_255_fast(x: u16) -> u8 {
     (((x) + (((x) + 257) >> 8)) >> 8) as u8
+}
+
+pub trait FullFrameAllocator:
+    FrameAllocator<Size4KiB>
+    + FrameAllocator<Size2MiB>
+    + FrameDeallocator<Size4KiB>
+    + FrameDeallocator<Size2MiB>
+{
 }

@@ -16,7 +16,7 @@ framebuffer-address = "0x_7F55_AAAA_0000"
 #kernel is placed at 0x007F_C000_0000, set in target json
 
 [dependencies]
-utils = { workspace=true }
+internal_utils = { workspace=true }
 kernel = { workspace=true }
 vga = { workspace=true }
 ata = { workspace=true }
@@ -26,7 +26,6 @@ test_framework = { workspace=true }
 bootloader = { workspace=true }
 tinytga = { workspace=true }
 
-
 [profile.release]
 lto = true
 codegen-units = 1
@@ -34,7 +33,7 @@ incremental = false
 
 [workspace]
 members = [
-    "utils",
+    "internal_utils",
     "boot",
     "kernel",
     "drivers/ata",
@@ -47,7 +46,7 @@ members = [
 edition = "2021"
 
 [workspace.dependencies]
-utils = { path = "utils"}
+internal_utils = { path = "internal_utils"}
 kernel = { path = "kernel" }
 vga = { path = "drivers/vga" }
 ata = { path = "drivers/ata" }

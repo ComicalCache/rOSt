@@ -2,8 +2,8 @@ use crate::interrupts::pic::{InterruptIndex, PICS};
 use crate::memory::with_kernel_memory;
 use crate::processes::{get_scheduler, RegistersState};
 use core::arch::asm;
-use utils::get_current_tick;
-use utils::{pop_all, push_all};
+use internal_utils::get_current_tick;
+use internal_utils::{pop_all, push_all};
 
 #[no_mangle]
 #[naked]

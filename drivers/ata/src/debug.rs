@@ -1,4 +1,4 @@
-use utils::{format_size, serial_println};
+use internal_utils::{format_size, serial_println};
 
 use crate::{ATABus, ATADisk, ATAIdentifyError};
 

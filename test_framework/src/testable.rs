@@ -1,5 +1,5 @@
-use kernel::structures::kernel_information::KernelInformation;
-use utils::{serial_print, serial_println};
+use internal_utils::structures::kernel_information::KernelInformation;
+use internal_utils::{serial_print, serial_println};
 
 use crate::ansi_colors::Green;
 

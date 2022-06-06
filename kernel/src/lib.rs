@@ -25,7 +25,6 @@ mod interrupts;
 pub mod logger;
 mod memory;
 pub mod processes;
-pub mod structures;
 pub mod syscalls;
 
 lazy_static! {

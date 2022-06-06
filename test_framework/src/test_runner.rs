@@ -3,8 +3,8 @@ use crate::{
     qemu_exit::{exit_qemu, QemuExitCode},
     testable::Testable,
 };
-use kernel::structures::kernel_information::KernelInformation;
-use utils::serial_println;
+use internal_utils::serial_println;
+use internal_utils::structures::kernel_information::KernelInformation;
 
 pub static mut KERNEL_INFO: Option<KernelInformation> = None;
 
@@ -20,7 +20,7 @@ pub fn test_runner(tests: &[&dyn Testable]) {
             Yellow("test(s):")
         );
         for test in tests {
-            test.run(unsafe { KERNEL_INFO }.clone().unwrap());
+            test.run(unsafe { KERNEL_INFO.clone() }.unwrap());
         }
     }
 

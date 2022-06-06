@@ -1,7 +1,7 @@
 use core::cell::RefCell;
 
 use alloc::rc::Rc;
-use utils::get_current_tick;
+use internal_utils::get_current_tick;
 use x86_64::VirtAddr;
 
 use super::Process;

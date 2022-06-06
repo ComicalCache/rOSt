@@ -1,4 +1,4 @@
-use utils::serial_print;
+use internal_utils::serial_print;
 use x86_64::structures::idt::InterruptStackFrame;
 
 /// Handles a general protection fault.

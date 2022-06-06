@@ -1,5 +1,5 @@
-use kernel::structures::kernel_information::PixelFormat;
-use utils::div_255_fast;
+use internal_utils::div_255_fast;
+use internal_utils::structures::kernel_information::PixelFormat;
 
 use crate::vga_color::VGAColor;
 

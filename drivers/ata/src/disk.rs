@@ -1,6 +1,6 @@
+use crate::array_combiner::Combiner;
 use alloc::{sync::Arc, vec::Vec};
 use spin::Mutex;
-use utils::array_combiner::Combiner;
 
 use crate::{
     constants::ErrorRegisterFlags, ATABus, ATAPartition, DiskDescriptor, PartitionDescriptor,

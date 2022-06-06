@@ -1,6 +1,6 @@
 use alloc::sync::Arc;
+use internal_utils::port_extensions::{PortExtRead, PortExtWrite};
 use spin::Mutex;
-use utils::port_extensions::{PortExtRead, PortExtWrite};
 use x86_64::instructions::{
     interrupts::without_interrupts,
     port::{Port, PortReadOnly, PortWriteOnly},

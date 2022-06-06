@@ -2,8 +2,8 @@ use bootloader::{
     boot_info::{MemoryRegionKind, MemoryRegions},
     BootInfo,
 };
+use internal_utils::{serial_println, FullFrameAllocator};
 use spin::Mutex;
-use utils::serial_println;
 use x86_64::{
     structures::paging::{
         FrameAllocator, FrameDeallocator, PageSize, PhysFrame, Size2MiB, Size4KiB,
@@ -326,3 +326,5 @@ fn get_bitflag_frames(start_address: PhysAddr) -> (PhysFrame<Size2MiB>, PhysFram
     }
     (four_kilobytes_frames_bitflag, two_megabyte_frames_bitflag)
 }
+
+impl FullFrameAllocator for BitmapFrameAllocator {}
