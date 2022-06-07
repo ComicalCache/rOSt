@@ -13,9 +13,10 @@
 extern crate alloc;
 
 use bootloader::{entry_point, BootInfo};
-use core::{arch::asm, panic::PanicInfo};
+use core::panic::PanicInfo;
 use internal_utils::structures::kernel_information::KernelInformation;
 use internal_utils::{constants::MIB, serial_println};
+use rost_lib::syscall;
 use tinytga::RawTga;
 use vga::vga_core::{Clearable, ImageDrawable};
 
@@ -35,6 +36,7 @@ pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
 }
 
 fn bootup_sequence(kernel_info: KernelInformation) {
+    rost_lib::initialize_syscalls();
     kernel::register_driver(vga::driver_init);
     kernel::register_driver(ata::driver_init);
     kernel::reload_drivers(kernel_info.clone());
@@ -71,23 +73,6 @@ extern "C" fn user_mode_check_2() {
             syscall(1, 0, 0);
             i = 1;
         }
-    }
-}
-
-#[inline(always)]
-fn syscall(rdi: u64, rsi: u64, rdx: u64) -> u64 {
-    unsafe {
-        let result: u64;
-        asm!(
-            "push r10; push r11; push rcx",
-            "syscall",
-            "pop rcx; pop r11; pop r10",
-            in("rdi")(rdi),
-            in("rsi")(rsi),
-            in("rdx")(rdx),
-            out("rax")(result)
-        );
-        result
     }
 }
 

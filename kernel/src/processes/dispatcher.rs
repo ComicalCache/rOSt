@@ -13,7 +13,7 @@ use super::get_scheduler;
 use super::RegistersState;
 
 /// Runs the thread immediately.
-pub fn run_thread(thread: Rc<RefCell<Thread>>) -> ! {
+pub fn switch_to_thread(thread: Rc<RefCell<Thread>>) -> ! {
     let code_selector_id: u64;
     let data_selector_id: u64;
     let cr3: PhysAddr;

@@ -3,7 +3,7 @@ use core::cell::RefCell;
 use alloc::{rc::Rc, vec::Vec};
 
 use super::{Process, Thread};
-use crate::processes::dispatcher::run_thread;
+use crate::processes::dispatcher::switch_to_thread;
 
 static mut SCHEDULER: Scheduler = Scheduler::new();
 
@@ -15,7 +15,7 @@ pub(crate) fn get_scheduler() -> &'static mut Scheduler {
 ///
 /// Will return only if there are no threads at all to run.
 pub fn run_processes() -> Option<()> {
-    run_thread(get_scheduler().schedule()?);
+    switch_to_thread(get_scheduler().schedule()?);
 }
 
 pub(crate) fn add_thread(thread: Rc<RefCell<Thread>>) {

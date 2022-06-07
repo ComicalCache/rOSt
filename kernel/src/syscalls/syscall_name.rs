@@ -3,4 +3,5 @@
 pub enum SysCallName {
     FirstProcess = 0,
     SecondProcess = 1,
+    ThreadExit = 300
 }

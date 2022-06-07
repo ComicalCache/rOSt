@@ -11,15 +11,15 @@ use super::RegistersState;
 
 #[derive(Debug)]
 pub struct Thread {
-    /// The thread's ID.
+    /// The thread's ID (in-process).
     pub id: u64,
     /// The state of the registers.
     pub registers_state: RegistersState,
-    /// Total ticks the process has been running for.
+    /// Total ticks the thread has been running for.
     pub total_ticks: u64,
-    /// The tick the process has been created on.
+    /// The tick the thread has been created on.
     pub start_tick: u64,
-    /// The tick the process has been last ran on.
+    /// The tick the thread has been last ran on.
     pub last_tick: u64,
     /// The process the thread is running for.
     pub process: Rc<RefCell<Process>>,

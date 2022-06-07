@@ -46,7 +46,7 @@ extern "C" fn timer_interrupt_handler(registers_state: *const RegistersState) {
         }
         let next_thread = get_scheduler().schedule();
         if let Some(thread) = next_thread {
-            crate::processes::dispatcher::run_thread(thread);
+            crate::processes::dispatcher::switch_to_thread(thread);
         }
     });
 }
