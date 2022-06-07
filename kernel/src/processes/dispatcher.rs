@@ -6,8 +6,8 @@ use x86_64::PhysAddr;
 
 use crate::interrupts::GDT;
 use crate::processes::Thread;
-use utils::get_current_tick;
-use utils::mov_all;
+use internal_utils::get_current_tick;
+use internal_utils::mov_all;
 
 use super::get_scheduler;
 use super::RegistersState;

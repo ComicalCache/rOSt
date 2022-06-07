@@ -7,6 +7,4 @@ edition = { workspace=true }
 
 [dependencies]
 x86_64 = { workspace=true }
-spin = { workspace=true }
-uart_16550 = { workspace=true }
-lazy_static = { workspace=true }
+internal_utils = { workspace=true }

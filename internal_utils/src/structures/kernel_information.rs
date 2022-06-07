@@ -1,19 +1,21 @@
+use alloc::sync::Arc;
 use bootloader::{
     boot_info::{FrameBuffer, MemoryRegions, Optional},
     BootInfo,
 };
+use spin::Mutex;
 use x86_64::PhysAddr;
 
-use crate::{debug, memory::frame_allocator::BitmapFrameAllocator};
+use crate::FullFrameAllocator;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 #[repr(C)]
 pub struct KernelInformation {
     pub bootloader_version: [u16; 3],
     pub physical_memory_offset: u64,
     pub framebuffer: Optional<KernelFrameBuffer>,
     pub memory_regions: &'static MemoryRegions,
-    pub allocator: BitmapFrameAllocator,
+    pub allocator: Arc<Mutex<dyn FullFrameAllocator>>,
     /// The start address of the kernel space in all page maps
     pub kernel_start: PhysAddr,
 }
@@ -69,7 +71,10 @@ impl KernelFrameBuffer {
 }
 
 impl KernelInformation {
-    pub(crate) fn new(boot_info: &'static BootInfo) -> KernelInformation {
+    pub fn new(
+        boot_info: &'static BootInfo,
+        allocator: Arc<Mutex<dyn FullFrameAllocator>>,
+    ) -> KernelInformation {
         let bootloader_version = [
             boot_info.version_major,
             boot_info.version_minor,
@@ -79,9 +84,6 @@ impl KernelInformation {
             Some(framebuffer) => Optional::Some(KernelFrameBuffer::new(framebuffer)),
             None => Optional::None,
         };
-        debug::log("Creating allocator");
-        let allocator = BitmapFrameAllocator::init(&boot_info);
-        debug::log("Obtained kernel info");
         KernelInformation {
             bootloader_version,
             physical_memory_offset: *boot_info

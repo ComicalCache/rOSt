@@ -1,17 +1,19 @@
-use alloc::vec::Vec;
+use alloc::{sync::Arc, vec::Vec};
 use bootloader::BootInfo;
+use internal_utils::serial_println;
 use lazy_static::lazy_static;
 use spin::Mutex;
-use test_framework::serial_println;
 
 use crate::{
-    interrupts, memory,
+    interrupts,
+    memory::{self, frame_allocator::BitmapFrameAllocator},
     processes::get_scheduler,
-    structures::{
-        driver::{Driver, Registrator},
-        kernel_information::KernelInformation,
-    },
     syscalls::{self, register_syscall},
+};
+
+use internal_utils::structures::{
+    driver::{Driver, Registrator},
+    kernel_information::KernelInformation,
 };
 
 use crate::debug;
@@ -47,8 +49,9 @@ extern "C" fn test_syscall2(a: u64, b: u64) -> u64 {
 pub fn init(boot_info: &'static BootInfo) -> KernelInformation {
     debug::print_memory_map(&boot_info.memory_regions);
     memory::save_kernel_memory();
-    memory::init(boot_info);
-    let kernel_info = KernelInformation::new(boot_info);
+    let mut allocator = BitmapFrameAllocator::init(boot_info);
+    memory::init(boot_info, &mut allocator);
+    let kernel_info = KernelInformation::new(boot_info, Arc::new(Mutex::new(allocator)));
     interrupts::reload_gdt();
     interrupts::init_idt();
     syscalls::setup_syscalls();
@@ -68,7 +71,7 @@ pub fn reload_drivers(kernel_info: KernelInformation) {
         REGISTERED_DRIVERS
             .lock()
             .iter()
-            .map(|registrator| registrator(kernel_info)),
+            .map(|registrator| registrator(kernel_info.clone())),
     );
 }
 

@@ -4,16 +4,15 @@
 #![feature(ptr_const_cast, generic_const_exprs, adt_const_params)]
 use alloc::boxed::Box;
 use core::fmt;
-use kernel::{
-    logger::Logger,
-    structures::{driver::Driver, kernel_information::KernelInformation},
-};
+use internal_utils::structures::{driver::Driver, kernel_information::KernelInformation};
+use kernel::logger::Logger;
 use vga_core::{Clearable, TextDrawable, CHAR_HEIGHT};
 use vga_device::{VGADevice, VGADeviceFactory};
 extern crate alloc;
 
 mod pixel_buffer;
 pub mod point_2d;
+mod static_stack;
 pub mod vga_color;
 pub mod vga_core;
 pub mod vga_device;

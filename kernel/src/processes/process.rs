@@ -3,9 +3,9 @@ use core::cell::RefCell;
 use crate::debug;
 use crate::processes::memory_mapper::get_user_mode_mapping;
 use crate::processes::ProcessFunction;
-use crate::structures::kernel_information::KernelInformation;
 use alloc::rc::Rc;
-use utils::get_current_tick;
+use internal_utils::get_current_tick;
+use internal_utils::structures::kernel_information::KernelInformation;
 use x86_64::{PhysAddr, VirtAddr};
 
 use alloc::vec::Vec;
@@ -45,9 +45,11 @@ impl Process {
     pub fn new(function: ProcessFunction, kernel_info: KernelInformation, id: u64) -> Self {
         let function_pointer = function as *const () as *const u8;
         unsafe {
-            let (user_page_map, user_physical_address) =
-                get_user_mode_mapping(kernel_info.physical_memory_offset, kernel_info.allocator)
-                    .expect("Error while creating user mode mapping");
+            let (user_page_map, user_physical_address) = get_user_mode_mapping(
+                kernel_info.physical_memory_offset,
+                kernel_info.allocator.clone(),
+            )
+            .expect("Error while creating user mode mapping");
 
             let user_mode_code_address = 0x1000u64;
 

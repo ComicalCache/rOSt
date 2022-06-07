@@ -7,11 +7,10 @@ name = "ata"
 version = "0.1.0"
 dependencies = [
  "bitflags",
+ "internal_utils",
  "kernel",
  "lazy_static",
  "spin 0.9.3",
- "test_framework",
- "utils",
  "x86_64",
 ]
 
@@ -102,6 +101,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "internal_utils"
+version = "0.1.0"
+dependencies = [
+ "bootloader",
+ "lazy_static",
+ "spin 0.9.3",
+ "uart_16550",
+ "x86_64",
+]
+
+[[package]]
 name = "json"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -112,6 +122,7 @@ name = "kernel"
 version = "0.1.0"
 dependencies = [
  "bootloader",
+ "internal_utils",
  "lazy_static",
  "linked_list_allocator",
  "pc-keyboard",
@@ -119,7 +130,6 @@ dependencies = [
  "spin 0.9.3",
  "test_framework",
  "uart_16550",
- "utils",
  "x86_64",
 ]
 
@@ -209,12 +219,13 @@ version = "0.1.0"
 dependencies = [
  "ata",
  "bootloader",
+ "internal_utils",
  "kernel",
  "rost-lib",
  "test_framework",
  "tinytga",
- "utils",
  "vga",
+ "x86_64",
 ]
 
 [[package]]
@@ -256,9 +267,9 @@ version = "0.1.0"
 dependencies = [
  "ata",
  "bitflags",
+ "internal_utils",
  "kernel",
  "lazy_static",
- "utils",
 ]
 
 [[package]]
@@ -322,9 +333,7 @@ dependencies = [
 name = "test_framework"
 version = "0.1.0"
 dependencies = [
- "lazy_static",
- "spin 0.9.3",
- "uart_16550",
+ "internal_utils",
  "x86_64",
 ]
 
@@ -376,13 +385,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
 
 [[package]]
-name = "utils"
-version = "0.1.0"
-dependencies = [
- "x86_64",
-]
-
-[[package]]
 name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -392,12 +394,12 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 name = "vga"
 version = "0.1.0"
 dependencies = [
+ "internal_utils",
  "kernel",
  "lazy_static",
  "noto-sans-mono-bitmap",
  "spin 0.9.3",
  "tinytga",
- "utils",
 ]
 
 [[package]]

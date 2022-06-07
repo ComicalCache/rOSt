@@ -14,23 +14,22 @@ extern crate alloc;
 
 use bootloader::{entry_point, BootInfo};
 use core::{arch::asm, panic::PanicInfo};
-use kernel::structures::kernel_information::KernelInformation;
-use test_framework::serial_println;
+use internal_utils::structures::kernel_information::KernelInformation;
+use internal_utils::{constants::MIB, serial_println};
 use tinytga::RawTga;
-use utils::constants::MIB;
 use vga::vga_core::{Clearable, ImageDrawable};
 
 use core::alloc::Layout;
 
 entry_point!(kernel);
 pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
-    let mut kernel_info = kernel::init(boot_info);
-    bootup_sequence(kernel_info);
+    let kernel_info = kernel::init(boot_info);
+    bootup_sequence(kernel_info.clone());
 
     #[cfg(test)]
     kernel_test(kernel_info);
     #[cfg(not(test))]
-    kernel_main(&mut kernel_info);
+    kernel_main(kernel_info);
 
     kernel::hlt_loop();
 }
@@ -38,11 +37,11 @@ pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
 fn bootup_sequence(kernel_info: KernelInformation) {
     kernel::register_driver(vga::driver_init);
     kernel::register_driver(ata::driver_init);
-    kernel::reload_drivers(kernel_info);
+    kernel::reload_drivers(kernel_info.clone());
     let data = include_bytes!("./assets/rost-logo.tga");
     let logo = RawTga::from_slice(data).unwrap();
     let logo_header = logo.header();
-    let mut vga_device = vga::vga_device::VGADeviceFactory::from_kernel_info(kernel_info);
+    let mut vga_device = vga::vga_device::VGADeviceFactory::from_kernel_info(kernel_info.clone());
     vga_device.clear(vga::vga_color::BLACK);
     vga_device.draw_image(
         (vga_device.width as u16 - logo_header.width) / 2,
@@ -92,13 +91,13 @@ fn syscall(rdi: u64, rsi: u64, rdx: u64) -> u64 {
     }
 }
 
-pub fn kernel_main(kernel_info: &mut KernelInformation) {
+pub fn kernel_main(kernel_info: KernelInformation) {
     use kernel::processes::{add_process, run_processes, Process, Thread};
 
-    let process1 = add_process(Process::new(user_mode_check_1, *kernel_info, 1));
+    let process1 = add_process(Process::new(user_mode_check_1, kernel_info.clone(), 1));
     let _thread1 = Thread::new(0x1000, 2 * MIB, process1);
 
-    let process2 = add_process(Process::new(user_mode_check_2, *kernel_info, 2));
+    let process2 = add_process(Process::new(user_mode_check_2, kernel_info.clone(), 2));
     let _thread2 = Thread::new(0x1000, 2 * MIB, process2);
 
     run_processes();
@@ -143,28 +142,62 @@ pub fn kernel_main(kernel_info: &mut KernelInformation) {
     */
 }
 
-/// Panic handler for the OS.
-#[cfg(not(test))]
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    kernel::panic_handler(info);
-}
-
 /// This is the main function for tests.
 #[cfg(test)]
 pub fn kernel_test(_kernel_info: KernelInformation) {
-    test_main();
-}
+    use test_framework::test_runner::KERNEL_INFO;
 
-/// Panic handler for the OS in test mode.
-#[cfg(test)]
-#[panic_handler]
-// this function is called if a panic occurs and it is a test, all output is redirected to the serial port
-fn panic(info: &PanicInfo) -> ! {
-    kernel::test_panic_handler(info);
+    unsafe { KERNEL_INFO = Some(_kernel_info) };
+    test_main();
 }
 
 #[alloc_error_handler]
 fn alloc_error_handler(layout: Layout) -> ! {
     panic!("allocation error: {:?}", layout)
+}
+
+#[cfg(not(test))]
+#[panic_handler]
+pub fn panic_handler(info: &PanicInfo) -> ! {
+    use test_framework::ansi_colors;
+
+    serial_println!("{}\n", ansi_colors::Red("[PANIC]"));
+    serial_println!("Error: {}\n", info);
+    kernel::hlt_loop();
+}
+
+#[cfg(test)]
+#[panic_handler]
+pub fn test_panic_handler(info: &PanicInfo) -> ! {
+    use test_framework::{
+        ansi_colors,
+        qemu_exit::{exit_qemu, QemuExitCode},
+    };
+
+    serial_println!("{}\n", ansi_colors::Red("[PANIC]"));
+    serial_println!("Error: {}\n", info);
+    exit_qemu(QemuExitCode::Failed);
+
+    kernel::hlt_loop();
+}
+
+#[cfg(test)]
+mod tests {
+    use alloc::boxed::Box;
+    use internal_utils::structures::kernel_information::KernelInformation;
+    use x86_64::structures::paging::Size4KiB;
+
+    #[test_case]
+    fn should_allocate_frame(kernel_information: KernelInformation) {
+        use x86_64::structures::paging::PhysFrame;
+        let mut allocator = kernel_information.allocator.lock();
+        let frame: Option<PhysFrame<Size4KiB>> = allocator.allocate_frame();
+        assert!(frame.is_some());
+    }
+
+    #[test_case]
+    fn should_allocate_box(_: KernelInformation) {
+        let boxed = Box::new(4);
+        assert_eq!(4, *boxed);
+    }
 }

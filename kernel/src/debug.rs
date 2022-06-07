@@ -1,6 +1,5 @@
 use bootloader::boot_info::{MemoryRegionKind, MemoryRegions};
-
-use test_framework::serial_println;
+use internal_utils::serial_println;
 
 #[inline(always)]
 pub fn log(msg: &str) {

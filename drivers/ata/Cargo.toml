@@ -6,9 +6,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-utils = { workspace=true }
+internal_utils = { workspace=true }
 kernel = { workspace=true }
-test_framework = { workspace=true }
 x86_64 = { workspace=true }
 spin = { workspace=true }
 bitflags = { workspace=true }

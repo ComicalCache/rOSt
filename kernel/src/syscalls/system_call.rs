@@ -7,7 +7,7 @@ use crate::{debug, memory::with_kernel_memory, processes::get_scheduler};
 
 use crate::interrupts::gdt::GDT;
 use core::arch::asm;
-use utils::{mov_all, push_all};
+use internal_utils::{mov_all, push_all};
 
 pub type SysCallHandlerFunc = extern "C" fn(u64, u64) -> u64;
 

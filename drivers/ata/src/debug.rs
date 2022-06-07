@@ -1,5 +1,4 @@
-use test_framework::serial_println;
-use utils::format_size;
+use internal_utils::{format_size, serial_println};
 
 use crate::{ATABus, ATADisk, ATAIdentifyError};
 

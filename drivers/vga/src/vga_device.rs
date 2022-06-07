@@ -1,8 +1,8 @@
+use crate::static_stack::StaticStack;
 use alloc::{boxed::Box, slice};
-use kernel::structures::kernel_information::{KernelInformation, PixelFormat};
+use internal_utils::structures::kernel_information::{KernelInformation, PixelFormat};
 use noto_sans_mono_bitmap::{get_bitmap, BitmapChar};
 use tinytga::RawTga;
-use utils::static_stack::StaticStack;
 
 use crate::{
     pixel_buffer::{BasePixelBuffer, PixelBuffer},

@@ -1,14 +1,13 @@
 cargo-features = ["workspace-inheritance"]
 
 [package]
-name = "vga"
+name = "internal_utils"
 version = "0.1.0"
 edition = { workspace=true }
 
 [dependencies]
-internal_utils = { workspace=true }
-kernel = { workspace=true }
-noto-sans-mono-bitmap = { workspace=true }
+x86_64 = { workspace=true }
+bootloader = { workspace=true }
 spin = { workspace=true }
-tinytga = { workspace=true }
+uart_16550 = { workspace=true }
 lazy_static = { workspace=true }

@@ -3,7 +3,7 @@
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 use alloc::vec::Vec;
-use kernel::structures::{driver::Driver, kernel_information::KernelInformation};
+use internal_utils::structures::{driver::Driver, kernel_information::KernelInformation};
 extern crate alloc;
 
 mod constants;
@@ -23,6 +23,8 @@ pub use disk::ATADisk;
 
 mod partition;
 pub use partition::{ATAPartition, PartitionIOError};
+
+mod array_combiner;
 
 #[cfg(debug_assertions)]
 mod debug;

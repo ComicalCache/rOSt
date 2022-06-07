@@ -1,4 +1,4 @@
-use test_framework::serial_println;
+use internal_utils::serial_println;
 use x86_64::structures::idt::InterruptStackFrame;
 use x86_64::structures::idt::PageFaultErrorCode;
 
