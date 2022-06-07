@@ -5,6 +5,7 @@ For more information about the project, please visit the [wiki](https://github.c
 ### Structure
 
 The project is divided into multiple folders:
+
 1. [src](src/) contains the main entry point of the kernel.
 2. [rost-lib](rost-lib/) contains the standard library that will be available to all programs written for the OS.
 3. [boot](boot/) contains the settings for building the image with the bootloader, and QEMU settings.
@@ -25,11 +26,18 @@ Rust should automatically switch to the nightly channel and install the llvm too
 ```bash
 cargo krun
 ```
+
 will build the kernel and start up a qemu instance booting the kernel in debug mode.
 
 ## Testing
 
-In terms of tests, we have no tests. (Yet!)
+We do have tests set up - they are ran after the kernel initializes the necessities like kernel heap, general memory management and interrupts.
+
+To run the tests do:
+
+```bash
+cargo ktest
+```
 
 ### Troubleshooting
 
