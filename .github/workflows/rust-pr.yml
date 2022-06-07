@@ -81,7 +81,7 @@ jobs:
         run: cargo check --target x86_64-unknown-none
 
       - name: Set up QEMU
-        run: apt-get install qemu
+        run: sudo apt-get install qemu
 
       - name: Test
         run: cargo ktest --verbose
