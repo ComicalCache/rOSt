@@ -66,5 +66,8 @@ jobs:
       - name: Build release
         run: cargo kbuild-r --verbose
 
+      - name: xcv
+        run: ls
+
       - name: Test
         run: cargo ktest --verbose
