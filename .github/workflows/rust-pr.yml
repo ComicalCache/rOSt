@@ -25,7 +25,7 @@ jobs:
               - '**/*.toml'
               - '**/*.json'
 
-  build:
+  lint:
     runs-on: ubuntu-latest
     needs: [conditional_job_check_files]
     if: needs.conditional_job_check_files.outputs.source_changed == 'true'
@@ -60,14 +60,54 @@ jobs:
           sarif_file: rust-clippy-results.sarif
           wait-for-processing: true
 
+  test:
+    runs-on: ubuntu-latest
+    needs: [conditional_job_check_files]
+    if: needs.conditional_job_check_files.outputs.source_changed == 'true'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: ⚡ Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install rust
+        run: cargo check --target x86_64-unknown-none
+
+      - name: Set up QEMU
+        run: apt-get install qemu
+
+      - name: Test
+        run: cargo ktest --verbose
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [conditional_job_check_files]
+    if: needs.conditional_job_check_files.outputs.source_changed == 'true'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: ⚡ Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install rust
+        run: cargo check --target x86_64-unknown-none
+
       - name: Build debug
         run: cargo kbuild --verbose
 
       - name: Build release
         run: cargo kbuild-r --verbose
-
-      - name: xcv
-        run: ls
-
-      - name: Test
-        run: cargo ktest --verbose
