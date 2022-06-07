@@ -45,14 +45,11 @@ impl Process {
     pub fn new(function: ProcessFunction, kernel_info: KernelInformation, id: u64) -> Self {
         let function_pointer = function as *const () as *const u8;
         unsafe {
-            let (user_page_map, user_physical_address) = {
-                let mapping = get_user_mode_mapping(
-                    kernel_info.physical_memory_offset,
-                    kernel_info.allocator.clone(),
-                )
-                .expect("Error while creating user mode mapping");
-                mapping
-            };
+            let (user_page_map, user_physical_address) = get_user_mode_mapping(
+                kernel_info.physical_memory_offset,
+                kernel_info.allocator.clone(),
+            )
+            .expect("Error while creating user mode mapping");
 
             let user_mode_code_address = 0x1000u64;
 
