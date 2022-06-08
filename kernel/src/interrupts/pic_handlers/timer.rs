@@ -37,7 +37,6 @@ extern "C" fn timer_interrupt_handler(registers_state: *const RegistersState) {
                     process.total_ticks += tick - process.last_tick;
                     process.last_tick = tick;
                 }
-                get_scheduler().add_thread(thread);
             }
         }
         unsafe {

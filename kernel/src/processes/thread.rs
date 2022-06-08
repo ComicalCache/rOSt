@@ -6,7 +6,6 @@ use x86_64::VirtAddr;
 
 use super::Process;
 
-use super::scheduler::add_thread;
 use super::RegistersState;
 
 #[derive(Debug)]
@@ -52,7 +51,6 @@ impl Thread {
         };
         let rc = Rc::new(RefCell::new(thread));
         process.borrow_mut().threads.push(rc.clone());
-        add_thread(rc.clone());
         rc
     }
 }
