@@ -76,7 +76,7 @@ pub fn exit_thread(thread: Rc<RefCell<Thread>>) -> Result<(), AddressNotAligned>
     let borrowed_thread = thread.borrow();
     let mut borrowed_process = borrowed_thread.process.borrow_mut();
     let threads = { &mut borrowed_process.threads };
-    threads.retain(|t| !Rc::ptr_eq(&t, &thread));
+    threads.retain(|t| !Rc::ptr_eq(t, &thread));
     debug::log("Removed thread from process");
     {
         let scheduler = get_scheduler();

@@ -3,7 +3,7 @@ use core::cell::RefCell;
 use alloc::{rc::Rc, vec::Vec};
 
 use super::{Process, Thread};
-use crate::{debug, processes::dispatcher::switch_to_thread};
+use crate::processes::dispatcher::switch_to_thread;
 
 static mut SCHEDULER: Scheduler = Scheduler::new();
 

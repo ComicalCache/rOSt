@@ -56,13 +56,6 @@ fn bootup_sequence(kernel_info: KernelInformation) {
 #[no_mangle]
 extern "C" fn user_mode_check_1() {
     exit(0);
-    let mut i = 1;
-    loop {
-        i += 1;
-        if i > 100_000_000 {
-            break;
-        }
-    }
 }
 
 #[no_mangle]
