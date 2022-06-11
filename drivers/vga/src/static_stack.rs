@@ -9,7 +9,7 @@ pub struct StaticStack<T: Sized + Default + Clone + Copy, const C: usize> {
 #[repr(u8)]
 pub enum StaticStackError {
     /// The stack is full.
-    EOS,
+    Eos,
 }
 
 impl<T: Sized + Default + Clone + Copy, const C: usize> StaticStack<T, C> {
@@ -24,10 +24,10 @@ impl<T: Sized + Default + Clone + Copy, const C: usize> StaticStack<T, C> {
     /// Pushes a value onto the stack.
     ///
     /// ## Returns
-    /// Returns `Ok(())` if the operation was successful, and `Err(StaticStackError::EOS)` if the stack is full.
+    /// Returns `Ok(())` if the operation was successful, and `Err(StaticStackError::Eos)` if the stack is full.
     pub fn push(&mut self, item: &T) -> Result<(), StaticStackError> {
         if self.top == C {
-            return Err(StaticStackError::EOS);
+            return Err(StaticStackError::Eos);
         }
         self.buffer[self.top] = *item;
         self.top += 1;

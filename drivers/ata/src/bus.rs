@@ -54,11 +54,11 @@ impl ATABus {
         }
     }
 
-    pub unsafe fn connected(&mut self) -> bool {
-        self.status_register_r.read() != 0xFF
+    pub fn connected(&mut self) -> bool {
+        unsafe { self.status_register_r.read() != 0xFF }
     }
 
-    pub unsafe fn wait_for(
+    pub fn wait_for(
         &mut self,
         flag: StatusRegisterFlags,
         should_be_on: bool,
@@ -69,27 +69,33 @@ impl ATABus {
             StatusRegisterFlags::empty()
         };
         loop {
-            let status = StatusRegisterFlags::from_bits_unchecked(self.status_register_r.read());
-            if status.intersection(flag) == condition {
-                break;
-            }
-            if status.contains(StatusRegisterFlags::ERR) {
-                let error = self.error_register_r.read();
-                if error != 0 {
-                    return Err(ErrorRegisterFlags::from_bits_unchecked(error));
+            unsafe {
+                let status =
+                    StatusRegisterFlags::from_bits_unchecked(self.status_register_r.read());
+                if status.intersection(flag) == condition {
+                    break;
+                }
+                if status.contains(StatusRegisterFlags::ERR) {
+                    let error = self.error_register_r.read();
+                    if error != 0 {
+                        return Err(ErrorRegisterFlags::from_bits_unchecked(error));
+                    }
                 }
             }
         }
         Ok(())
     }
 
-    pub unsafe fn wait_400ns(&mut self) -> Result<(), ErrorRegisterFlags> {
+    pub fn wait_400ns(&mut self) -> Result<(), ErrorRegisterFlags> {
         for _ in 0..15 {
-            let status = StatusRegisterFlags::from_bits_unchecked(self.status_register_r.read());
-            if status.contains(StatusRegisterFlags::ERR) {
-                let error = self.error_register_r.read();
-                if error != 0 {
-                    return Err(ErrorRegisterFlags::from_bits_unchecked(error));
+            unsafe {
+                let status =
+                    StatusRegisterFlags::from_bits_unchecked(self.status_register_r.read());
+                if status.contains(StatusRegisterFlags::ERR) {
+                    let error = self.error_register_r.read();
+                    if error != 0 {
+                        return Err(ErrorRegisterFlags::from_bits_unchecked(error));
+                    }
                 }
             }
         }

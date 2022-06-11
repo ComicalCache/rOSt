@@ -43,8 +43,7 @@ impl BitmapFrameAllocator {
             // We first need to take a 2M frame and 2x4K frames from the memory map for the bitflags.
             let usable_memory_region = memory_map
                 .iter()
-                .filter(|region| region.kind == MemoryRegionKind::Usable)
-                .nth(0)
+                .find(|region| region.kind == MemoryRegionKind::Usable)
                 .unwrap();
 
             let (four_kilobytes_frames_bitflag, two_megabyte_frames_bitflag) =

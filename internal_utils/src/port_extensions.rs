@@ -4,20 +4,26 @@ use x86_64::{
 };
 
 pub trait PortExtRead<T: PortRead> {
-    unsafe fn read_to_buffer(&mut self, buffer: &mut [T]);
-}
-
-pub trait PortExtWrite<T: PortWrite> {
-    unsafe fn write_from_buffer(&mut self, buffer: &[T]);
-}
-
-impl<T: PortRead, A: PortReadAccess> PortExtRead<T> for PortGeneric<T, A> {
     /// Reads a given number of values from the port and into a buffer.
     ///
     /// ## Safety
     ///
     /// This function is unsafe because the I/O port could have side effects that violate memory
     /// safety.
+    unsafe fn read_to_buffer(&mut self, buffer: &mut [T]);
+}
+
+pub trait PortExtWrite<T: PortWrite> {
+    /// Reads a given number of values from the port and into a buffer.
+    ///
+    /// ## Safety
+    ///
+    /// This function is unsafe because the I/O port could have side effects that violate memory
+    /// safety.
+    unsafe fn write_from_buffer(&mut self, buffer: &[T]);
+}
+
+impl<T: PortRead, A: PortReadAccess> PortExtRead<T> for PortGeneric<T, A> {
     #[inline]
     unsafe fn read_to_buffer(self: &mut PortGeneric<T, A>, buffer: &mut [T]) {
         for data in buffer {
@@ -27,12 +33,6 @@ impl<T: PortRead, A: PortReadAccess> PortExtRead<T> for PortGeneric<T, A> {
 }
 
 impl<A: PortReadAccess> PortExtRead<u8> for PortGeneric<u16, A> {
-    /// Reads a given number of values from the port and into a buffer.
-    ///
-    /// ## Safety
-    ///
-    /// This function is unsafe because the I/O port could have side effects that violate memory
-    /// safety.
     #[inline]
     unsafe fn read_to_buffer(self: &mut PortGeneric<u16, A>, buffer: &mut [u8]) {
         let mut index = 0;
