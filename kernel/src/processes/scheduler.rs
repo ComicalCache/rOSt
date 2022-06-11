@@ -1,13 +1,13 @@
 use core::cell::RefCell;
 
-use alloc::{rc::Rc, sync::Arc, vec::Vec};
+use alloc::{rc::Rc, vec::Vec};
 
 use super::{Process, Thread};
-use crate::processes::dispatcher::switch_to_thread;
+use crate::{debug, processes::dispatcher::switch_to_thread};
 
 static mut SCHEDULER: Scheduler = Scheduler::new();
 
-pub(crate) fn get_scheduler() -> &'static mut Scheduler {
+pub fn get_scheduler() -> &'static mut Scheduler {
     unsafe { &mut SCHEDULER }
 }
 
@@ -22,7 +22,16 @@ pub fn add_process(process: Process) -> Rc<RefCell<Process>> {
     get_scheduler().add_process(process)
 }
 
-pub(crate) struct Scheduler {
+pub fn run_next_thread() -> Option<()> {
+    let next_thread = get_scheduler().schedule();
+    if let Some(thread) = next_thread {
+        crate::processes::dispatcher::switch_to_thread(thread);
+    } else {
+        Some(())
+    }
+}
+
+pub struct Scheduler {
     /// The currently running process.
     pub running_thread: Option<Rc<RefCell<Thread>>>,
     /// The list of processes that are registered.
@@ -42,6 +51,10 @@ impl Scheduler {
         let rc = Rc::new(RefCell::new(process));
         self.processes.push(rc.clone());
         rc
+    }
+
+    pub fn remove_process(&mut self, process: Rc<RefCell<Process>>) {
+        self.processes.retain(|p| !Rc::ptr_eq(p, &process));
     }
 
     /// Returns the thread that should be ran next.

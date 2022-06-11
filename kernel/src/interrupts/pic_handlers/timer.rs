@@ -1,6 +1,6 @@
 use crate::interrupts::pic::{InterruptIndex, PICS};
 use crate::memory::with_kernel_memory;
-use crate::processes::{get_scheduler, RegistersState};
+use crate::processes::{get_scheduler, run_next_thread, RegistersState};
 use core::arch::asm;
 use internal_utils::get_current_tick;
 use internal_utils::{pop_all, push_all};
@@ -43,9 +43,6 @@ extern "C" fn timer_interrupt_handler(registers_state: *const RegistersState) {
             PICS.lock()
                 .notify_end_of_interrupt(InterruptIndex::Timer.as_u8());
         }
-        let next_thread = get_scheduler().schedule();
-        if let Some(thread) = next_thread {
-            crate::processes::dispatcher::switch_to_thread(thread);
-        }
+        run_next_thread();
     });
 }

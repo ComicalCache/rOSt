@@ -2,14 +2,17 @@ use core::arch::asm;
 use core::cell::RefCell;
 
 use alloc::rc::Rc;
+use x86_64::structures::paging::page::AddressNotAligned;
 use x86_64::PhysAddr;
 
+use crate::debug;
 use crate::interrupts::GDT;
 use crate::processes::Thread;
 use internal_utils::get_current_tick;
 use internal_utils::mov_all;
 
 use super::get_scheduler;
+use super::memory_mapper::clear_user_mode_mapping;
 use super::RegistersState;
 
 /// Runs the thread immediately.
@@ -65,4 +68,31 @@ pub fn switch_to_thread(thread: Rc<RefCell<Thread>>) -> ! {
             options(noreturn)
         );
     }
+}
+
+/// Removes the thread from it's process. If this thread is the last one, the process is cleaned up.
+pub fn exit_thread(thread: Rc<RefCell<Thread>>) -> Result<(), AddressNotAligned> {
+    debug::log("Exiting thread");
+    let borrowed_thread = thread.borrow();
+    let mut borrowed_process = borrowed_thread.process.borrow_mut();
+    let threads = { &mut borrowed_process.threads };
+    threads.retain(|t| !Rc::ptr_eq(&t, &thread));
+    debug::log("Removed thread from process");
+    {
+        let scheduler = get_scheduler();
+        if let Some(current_thread) = scheduler.running_thread.clone() {
+            if Rc::ptr_eq(&thread, &current_thread) {
+                scheduler.running_thread = None;
+            }
+        }
+    }
+    if threads.is_empty() {
+        //Clean up the process
+        get_scheduler().remove_process(borrowed_thread.process.clone());
+        debug::log("Removed process from scheduler");
+        unsafe {
+            clear_user_mode_mapping(borrowed_process.cr3)?;
+        }
+    }
+    Ok(())
 }

@@ -13,10 +13,11 @@
 extern crate alloc;
 
 use bootloader::{entry_point, BootInfo};
+use core::arch::asm;
 use core::panic::PanicInfo;
 use internal_utils::structures::kernel_information::KernelInformation;
 use internal_utils::{constants::MIB, serial_println};
-use rost_lib::syscall;
+use rost_lib::syscall_name::SysCallName;
 use tinytga::RawTga;
 use vga::vga_core::{Clearable, ImageDrawable};
 
@@ -36,14 +37,14 @@ pub fn kernel(boot_info: &'static mut BootInfo) -> ! {
 }
 
 fn bootup_sequence(kernel_info: KernelInformation) {
-    rost_lib::initialize_syscalls();
+    rost_lib::__initialize_syscalls();
     kernel::register_driver(vga::driver_init);
     kernel::register_driver(ata::driver_init);
-    kernel::reload_drivers(kernel_info.clone());
+    kernel::reload_drivers();
     let data = include_bytes!("./assets/rost-logo.tga");
     let logo = RawTga::from_slice(data).unwrap();
     let logo_header = logo.header();
-    let mut vga_device = vga::vga_device::VGADeviceFactory::from_kernel_info(kernel_info.clone());
+    let mut vga_device = vga::vga_device::VGADeviceFactory::from_kernel_info(kernel_info);
     vga_device.clear(vga::vga_color::BLACK);
     vga_device.draw_image(
         (vga_device.width as u16 - logo_header.width) / 2,
@@ -54,12 +55,12 @@ fn bootup_sequence(kernel_info: KernelInformation) {
 
 #[no_mangle]
 extern "C" fn user_mode_check_1() {
+    exit(0);
     let mut i = 1;
     loop {
         i += 1;
-        if i > 10_000_000 {
-            syscall(0, 0, 0);
-            i = 1;
+        if i > 100_000_000 {
+            break;
         }
     }
 }
@@ -69,21 +70,43 @@ extern "C" fn user_mode_check_2() {
     let mut i = 1;
     loop {
         i += 1;
-        if i > 10_000_000 {
-            syscall(1, 0, 0);
-            i = 1;
+        if i > 100_000_000 {
+            break;
         }
     }
+    exit(0);
+}
+
+#[inline(always)]
+pub(crate) fn syscall(name: SysCallName, arg1: u64, arg2: u64) -> u64 {
+    unsafe {
+        let result: u64;
+        asm!(
+            "push r10; push r11; push rcx",
+            "syscall",
+            "pop rcx; pop r11; pop r10",
+            in("rdi")(name as u64),
+            in("rsi")(arg1),
+            in("rdx")(arg2),
+            out("rax")(result)
+        );
+        result
+    }
+}
+
+pub extern "C" fn exit(status: u64) -> ! {
+    crate::syscall(SysCallName::ThreadExit, status, 0);
+    panic!("Thread exited");
 }
 
 pub fn kernel_main(kernel_info: KernelInformation) {
     use kernel::processes::{add_process, run_processes, Process, Thread};
 
-    let process1 = add_process(Process::new(user_mode_check_1, kernel_info.clone(), 1));
+    let process1 = add_process(Process::new(user_mode_check_1, 1));
     let _thread1 = Thread::new(0x1000, 2 * MIB, process1);
 
-    let process2 = add_process(Process::new(user_mode_check_2, kernel_info.clone(), 2));
-    let _thread2 = Thread::new(0x1000, 2 * MIB, process2);
+    //let process2 = add_process(Process::new(user_mode_check_2, 2));
+    //let _thread2 = Thread::new(0x1000, 2 * MIB, process2);
 
     run_processes();
     serial_println!("Something went wrong");

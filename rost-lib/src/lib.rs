@@ -4,25 +4,27 @@
 #![feature(generic_const_exprs, core_intrinsics, alloc_error_handler)]
 
 use core::arch::asm;
+
+use crate::syscall_name::SysCallName;
 extern crate alloc;
 
-mod thread_utils;
+pub mod syscall_name;
+pub mod thread_utils;
 
-pub fn initialize_syscalls() {
-    use kernel::syscalls::register_syscall;
-    use kernel::syscalls::SysCallName;
+pub fn __initialize_syscalls() {
+    use kernel::syscalls::system_call::register_syscall;
     register_syscall(SysCallName::ThreadExit as u16, thread_utils::thread_exit);
 }
 
 #[inline(always)]
-pub fn syscall(name: u64, arg1: u64, arg2: u64) -> u64 {
+pub(crate) fn syscall(name: SysCallName, arg1: u64, arg2: u64) -> u64 {
     unsafe {
         let result: u64;
         asm!(
             "push r10; push r11; push rcx",
             "syscall",
             "pop rcx; pop r11; pop r10",
-            in("rdi")(name),
+            in("rdi")(name as u64),
             in("rsi")(arg1),
             in("rdx")(arg2),
             out("rax")(result)
