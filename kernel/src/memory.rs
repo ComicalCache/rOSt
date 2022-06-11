@@ -37,10 +37,7 @@ pub(crate) fn switch_to_kernel_memory() {
 }
 
 /// Performs an action while having kernel paging table. Then switches back.
-pub(crate) fn with_kernel_memory<T, V>(action: T) -> V
-where
-    T: Fn() -> V,
-{
+pub(crate) fn with_kernel_memory<V>(action: impl FnOnce() -> V) -> V {
     let cr3 = Cr3::read().0.start_address();
     switch_to_kernel_memory();
     let result = action();
