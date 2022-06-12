@@ -237,7 +237,7 @@ where
     S: PageSize,
 {
     unsafe fn deallocate_frame(&mut self, frame: PhysFrame<S>) {
-        todo!()
+        self.set_unused(frame.start_address().as_u64(), frame.size());
     }
 }
 
