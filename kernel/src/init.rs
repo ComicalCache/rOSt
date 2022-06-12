@@ -8,7 +8,7 @@ use crate::{
     interrupts,
     memory::{self, frame_allocator::BitmapFrameAllocator},
     processes::get_scheduler,
-    syscalls::{self, register_syscall},
+    syscalls::system_call::{register_syscall, setup_syscalls},
 };
 
 use internal_utils::structures::{
@@ -22,6 +22,8 @@ lazy_static! {
     static ref REGISTERED_DRIVERS: Mutex<Vec<Registrator>> = Mutex::new(Vec::new());
     static ref INITIALIZED_DRIVERS: Mutex<Vec<Driver>> = Mutex::new(Vec::new());
 }
+
+pub(crate) static mut KERNEL_INFORMATION: Option<KernelInformation> = None;
 
 extern "C" fn test_syscall(a: u64, b: u64) -> u64 {
     let thr = get_scheduler().running_thread.clone().unwrap();
@@ -54,17 +56,26 @@ pub fn init(boot_info: &'static BootInfo) -> KernelInformation {
     let kernel_info = KernelInformation::new(boot_info, Arc::new(Mutex::new(allocator)));
     interrupts::reload_gdt();
     interrupts::init_idt();
-    syscalls::setup_syscalls();
+    setup_syscalls();
     interrupts::enable();
 
     register_syscall(0, test_syscall);
     register_syscall(1, test_syscall2);
 
+    unsafe {
+        KERNEL_INFORMATION = Some(kernel_info.clone());
+    }
+
     kernel_info
 }
 
+pub fn get_kernel_information() -> KernelInformation {
+    unsafe { KERNEL_INFORMATION.clone().unwrap() }
+}
+
 /// Reinitializes all the registered drivers
-pub fn reload_drivers(kernel_info: KernelInformation) {
+pub fn reload_drivers() {
+    let kernel_info = get_kernel_information();
     let mut initialized_drivers = INITIALIZED_DRIVERS.lock();
     initialized_drivers.clear();
     initialized_drivers.extend(

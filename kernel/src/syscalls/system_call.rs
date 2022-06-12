@@ -2,7 +2,6 @@ use lazy_static::lazy_static;
 use spin::Mutex;
 use x86_64::VirtAddr;
 
-use super::syscall_name::SysCallName;
 use crate::{debug, memory::with_kernel_memory, processes::get_scheduler};
 
 use crate::interrupts::gdt::GDT;
@@ -106,9 +105,9 @@ unsafe extern "C" fn _syscall() -> ! {
 }
 
 #[no_mangle]
-extern "C" fn handler(name: SysCallName, arg1: u64, arg2: u64) -> u64 {
+extern "C" fn handler(name: u64, arg1: u64, arg2: u64) -> u64 {
     // This block executes after saving the user state and before returning back
-    with_kernel_memory(|| SYSCALLS.lock()[name as u64 as u16 as usize](arg1, arg2))
+    with_kernel_memory(|| SYSCALLS.lock()[name as u16 as usize](arg1, arg2))
 }
 
 // TODO Try to combine both of these functions to make it faster.

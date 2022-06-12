@@ -1,11 +1,10 @@
 use core::cell::RefCell;
 
-use crate::debug;
 use crate::processes::memory_mapper::get_user_mode_mapping;
 use crate::processes::ProcessFunction;
+use crate::{debug, init::get_kernel_information};
 use alloc::rc::Rc;
 use internal_utils::get_current_tick;
-use internal_utils::structures::kernel_information::KernelInformation;
 use x86_64::{PhysAddr, VirtAddr};
 
 use alloc::vec::Vec;
@@ -42,14 +41,12 @@ impl Process {
     // TODO: loading the process from e.g. an ELF file
     // We have to look up the structure of an ELF file and prepare the user memory mapping according to it.
     // Then we can load the program and it's data to proper places and create a process out of it.
-    pub fn new(function: ProcessFunction, kernel_info: KernelInformation, id: u64) -> Self {
+    pub fn new(function: ProcessFunction, id: u64) -> Self {
         let function_pointer = function as *const () as *const u8;
+        let kernel_info = get_kernel_information();
         unsafe {
-            let (user_page_map, user_physical_address) = get_user_mode_mapping(
-                kernel_info.physical_memory_offset,
-                kernel_info.allocator.clone(),
-            )
-            .expect("Error while creating user mode mapping");
+            let (user_page_map, user_physical_address) =
+                get_user_mode_mapping().expect("Error while creating user mode mapping");
 
             let user_mode_code_address = 0x1000u64;
 
