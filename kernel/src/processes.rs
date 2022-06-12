@@ -12,7 +12,6 @@ mod registers_state;
 pub use registers_state::RegistersState;
 
 mod scheduler;
-pub(crate) use scheduler::get_scheduler;
-pub use scheduler::{add_process, run_processes};
+pub use scheduler::{add_process, get_scheduler, run_next_thread, run_processes};
 
 pub type ProcessFunction = extern "C" fn();
