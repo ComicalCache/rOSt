@@ -3,5 +3,6 @@
     "target": true
   },
   "editor.formatOnSave": true,
-  "files.autoSave": "afterDelay"
+  "files.autoSave": "afterDelay",
+  "rust-analyzer.checkOnSave.command": "clippy"
 }
