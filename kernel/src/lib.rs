@@ -2,6 +2,7 @@
 #![no_main]
 #![allow(incomplete_features)]
 #![feature(
+    option_get_or_insert_default,
     abi_x86_interrupt,
     generic_const_exprs,
     core_intrinsics,

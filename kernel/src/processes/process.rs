@@ -9,7 +9,7 @@ use x86_64::{PhysAddr, VirtAddr};
 
 use alloc::vec::Vec;
 
-use super::Thread;
+use super::thread::{Thread, ThreadState};
 
 #[derive(Debug)]
 pub struct Process {
@@ -25,8 +25,12 @@ pub struct Process {
     pub last_tick: u64,
     /// Is the process a kernel process (should it run in ring 0 or 3?).
     pub kernel_process: bool,
-    /// The threads of the process.
-    pub threads: Vec<Rc<RefCell<Thread>>>,
+    /// The threads of the process that have not started yet.
+    pub not_started_threads: Vec<Rc<RefCell<Thread>>>,
+    /// The threads of the process that are eligible to run.
+    pub ready_threads: Vec<Rc<RefCell<Thread>>>,
+    /// The threads of the process that are sleeping.
+    pub sleeping_threads: Vec<Rc<RefCell<Thread>>>,
 }
 
 impl Process {
@@ -67,8 +71,36 @@ impl Process {
                 start_tick: get_current_tick(),
                 last_tick: 0,
                 kernel_process: false,
-                threads: Vec::new(),
+                not_started_threads: Vec::new(),
+                ready_threads: Vec::new(),
+                sleeping_threads: Vec::new(),
             }
         }
+    }
+
+    /// Updates the sleeping threads, waking them up if they are sleeping for too long.
+    pub fn update_sleeping_threads(this: Rc<RefCell<Process>>) {
+        let mut process = this.borrow_mut();
+        if process.sleeping_threads.is_empty() {
+            return;
+        }
+        let mut drained = Vec::new();
+        process.sleeping_threads.retain(|thread| {
+            let mut borrowed_thread = thread.borrow_mut();
+            match borrowed_thread.state {
+                ThreadState::Sleeping(ref mut sleep_ticks) => {
+                    if *sleep_ticks > 0 {
+                        *sleep_ticks -= 1;
+                        true
+                    } else {
+                        borrowed_thread.state = ThreadState::Ready;
+                        drained.push(thread.clone());
+                        false
+                    }
+                }
+                _ => unreachable!(),
+            }
+        });
+        process.ready_threads.extend(drained);
     }
 }

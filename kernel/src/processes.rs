@@ -2,11 +2,9 @@ pub mod dispatcher;
 
 mod memory_mapper;
 
-mod process;
-pub use process::Process;
+pub mod process;
 
-mod thread;
-pub use thread::Thread;
+pub mod thread;
 
 mod registers_state;
 pub use registers_state::RegistersState;

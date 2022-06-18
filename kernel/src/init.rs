@@ -1,4 +1,6 @@
-use alloc::{sync::Arc, vec::Vec};
+use core::cell::RefCell;
+
+use alloc::{rc::Rc, sync::Arc, vec::Vec};
 use bootloader::BootInfo;
 use internal_utils::serial_println;
 use lazy_static::lazy_static;
@@ -7,7 +9,7 @@ use spin::Mutex;
 use crate::{
     interrupts,
     memory::{self, frame_allocator::BitmapFrameAllocator},
-    processes::get_scheduler,
+    processes::thread::Thread,
     syscalls::system_call::{register_syscall, setup_syscalls},
 };
 
@@ -25,9 +27,8 @@ lazy_static! {
 
 pub(crate) static mut KERNEL_INFORMATION: Option<KernelInformation> = None;
 
-extern "C" fn test_syscall(a: u64, b: u64) -> u64 {
-    let thr = get_scheduler().running_thread.clone().unwrap();
-    let thread = thr.as_ref().borrow();
+extern "C" fn test_syscall(a: u64, b: u64, caller: Rc<RefCell<Thread>>) -> u64 {
+    let thread = caller.borrow();
     serial_println!(
         "Syscall 0 from process {} and thread {}",
         thread.process.as_ref().borrow().id,
@@ -36,9 +37,8 @@ extern "C" fn test_syscall(a: u64, b: u64) -> u64 {
     0
 }
 
-extern "C" fn test_syscall2(a: u64, b: u64) -> u64 {
-    let thr = get_scheduler().running_thread.clone().unwrap();
-    let thread = thr.as_ref().borrow();
+extern "C" fn test_syscall2(a: u64, b: u64, caller: Rc<RefCell<Thread>>) -> u64 {
+    let thread = caller.borrow();
     serial_println!(
         "Syscall 1 from process {} and thread {}",
         thread.process.as_ref().borrow().id,

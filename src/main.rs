@@ -93,10 +93,16 @@ pub extern "C" fn exit(status: u64) -> ! {
 }
 
 pub fn kernel_main(kernel_info: KernelInformation) {
-    use kernel::processes::{add_process, run_processes, Process, Thread};
+    use kernel::processes::{
+        add_process,
+        process::Process,
+        run_processes,
+        thread::{Thread, ThreadState},
+    };
 
     let process1 = add_process(Process::new(user_mode_check_1, 1));
-    let _thread1 = Thread::new(0x1000, 2 * MIB, process1);
+    let thread1 = Thread::new(0x1000, 2 * MIB, process1);
+    Thread::change_state(thread1, ThreadState::Ready);
 
     //let process2 = add_process(Process::new(user_mode_check_2, 2));
     //let _thread2 = Thread::new(0x1000, 2 * MIB, process2);
@@ -162,7 +168,7 @@ fn alloc_error_handler(layout: Layout) -> ! {
 pub fn panic_handler(info: &PanicInfo) -> ! {
     use test_framework::ansi_colors;
 
-    serial_println!("{}\n", ansi_colors::Red("[PANIC]"));
+    serial_println!("{}", ansi_colors::Red("[PANIC]"));
     serial_println!("Error: {}\n", info);
     kernel::hlt_loop();
 }
@@ -175,7 +181,7 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
         qemu_exit::{exit_qemu, QemuExitCode},
     };
 
-    serial_println!("{}\n", ansi_colors::Red("[PANIC]"));
+    serial_println!("{}", ansi_colors::Red("[PANIC]"));
     serial_println!("Error: {}\n", info);
     exit_qemu(QemuExitCode::Failed);
 

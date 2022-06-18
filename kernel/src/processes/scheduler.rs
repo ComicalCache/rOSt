@@ -1,14 +1,14 @@
 use core::cell::RefCell;
 
-use alloc::{rc::Rc, vec::Vec};
+use alloc::{collections::VecDeque, rc::Rc};
 
-use super::{Process, Thread};
+use super::{process::Process, thread::Thread, RegistersState};
 use crate::processes::dispatcher::switch_to_thread;
 
-static mut SCHEDULER: Scheduler = Scheduler::new();
+static mut SCHEDULER: Option<Scheduler> = None;
 
 pub fn get_scheduler() -> &'static mut Scheduler {
-    unsafe { &mut SCHEDULER }
+    unsafe { SCHEDULER.get_or_insert_default() }
 }
 
 /// Runs the scheduler, giving it control of the CPU.
@@ -31,30 +31,39 @@ pub fn run_next_thread() -> Option<()> {
     }
 }
 
+#[derive(Default)]
 pub struct Scheduler {
     /// The currently running process.
     pub running_thread: Option<Rc<RefCell<Thread>>>,
     /// The list of processes that are registered.
-    processes: Vec<Rc<RefCell<Process>>>,
+    processes: VecDeque<Rc<RefCell<Process>>>,
 }
 
 impl Scheduler {
-    pub const fn new() -> Self {
-        Self {
-            running_thread: None,
-            processes: Vec::new(),
-        }
-    }
-
     /// Adds a process to the scheduling queue so it will be ran.
     pub fn add_process(&mut self, process: Process) -> Rc<RefCell<Process>> {
         let rc = Rc::new(RefCell::new(process));
-        self.processes.push(rc.clone());
+        self.processes.push_back(rc.clone());
         rc
     }
 
+    /// Removes the process from the queue.
     pub fn remove_process(&mut self, process: Rc<RefCell<Process>>) {
         self.processes.retain(|p| !Rc::ptr_eq(p, &process));
+    }
+
+    /// Manages scheduler operations on a timer tick
+    pub fn timer_tick(&self, registers_state: RegistersState, tick: u64) {
+        if let Some(thread) = self.running_thread.clone() {
+            let mut thread_mut = thread.borrow_mut();
+
+            thread_mut.registers_state = registers_state;
+            thread_mut.total_ticks += tick - thread_mut.last_tick;
+            thread_mut.last_tick = tick;
+            let mut process = thread_mut.process.borrow_mut();
+            process.total_ticks += tick - process.last_tick;
+            process.last_tick = tick;
+        }
     }
 
     /// Returns the thread that should be ran next.
@@ -62,20 +71,30 @@ impl Scheduler {
         if self.processes.is_empty() {
             return None;
         }
-        // We're taking the first process in the queue
-        let process = self.processes.remove(0);
-        let thread = {
-            let process_cloned = process.clone();
-            let mut process_borrowed = process_cloned.borrow_mut();
-            // Taking the first thread in the chosen process
-            let thread = process_borrowed.threads.remove(0);
-            // Putting the thread at the back of the thread-queue
-            process_borrowed.threads.push(thread.clone());
-            thread
-        };
+        // We're taking the first process in the queue that returns a runnable thread
+        let processes = &self.processes;
+        let process_index = processes.iter().position(|process| {
+            Process::update_sleeping_threads(process.clone());
+            !process.borrow().ready_threads.is_empty()
+        })?;
+        let process = self.processes.remove(process_index)?;
+        let thread = Scheduler::get_thread_to_run(process.clone())?;
         // Putting the process at the back of the queue
-        self.processes.push(process);
+        self.processes.push_back(process);
 
+        Some(thread)
+    }
+
+    /// Returns the thread from the process that should be ran next.
+    fn get_thread_to_run(process: Rc<RefCell<Process>>) -> Option<Rc<RefCell<Thread>>> {
+        let mut process_borrowed = process.borrow_mut();
+        // Taking the first thread in the chosen process
+        if process_borrowed.ready_threads.is_empty() {
+            return None;
+        }
+        let thread = process_borrowed.ready_threads.remove(0);
+        // Putting the thread at the back of the thread-queue
+        process_borrowed.ready_threads.push(thread.clone());
         Some(thread)
     }
 }

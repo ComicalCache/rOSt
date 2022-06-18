@@ -25,20 +25,7 @@ extern "C" fn timer_interrupt_handler(registers_state: *const RegistersState) {
     let tick = get_current_tick();
 
     with_kernel_memory(|| {
-        {
-            if let Some(thread) = get_scheduler().running_thread.clone() {
-                {
-                    let mut thread_mut = thread.borrow_mut();
-
-                    thread_mut.registers_state = registers_state;
-                    thread_mut.total_ticks += tick - thread_mut.last_tick;
-                    thread_mut.last_tick = tick;
-                    let mut process = thread_mut.process.borrow_mut();
-                    process.total_ticks += tick - process.last_tick;
-                    process.last_tick = tick;
-                }
-            }
-        }
+        get_scheduler().timer_tick(registers_state, tick);
         unsafe {
             PICS.lock()
                 .notify_end_of_interrupt(InterruptIndex::Timer.as_u8());

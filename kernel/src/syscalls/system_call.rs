@@ -1,17 +1,20 @@
+use alloc::rc::Rc;
 use lazy_static::lazy_static;
 use spin::Mutex;
 use x86_64::VirtAddr;
 
+use crate::processes::thread::Thread;
 use crate::{debug, memory::with_kernel_memory, processes::get_scheduler};
 
 use crate::interrupts::gdt::GDT;
 use core::arch::asm;
+use core::cell::RefCell;
 use internal_utils::{mov_all, push_all};
 
-pub type SysCallHandlerFunc = extern "C" fn(u64, u64) -> u64;
+pub type SysCallHandlerFunc = extern "C" fn(u64, u64, Rc<RefCell<Thread>>) -> u64;
 
 /// A system call handler that panics.
-extern "C" fn fail_syscall(_arg1: u64, _arg2: u64) -> u64 {
+extern "C" fn fail_syscall(_arg1: u64, _arg2: u64, calling_thread: Rc<RefCell<Thread>>) -> u64 {
     panic!("NO SYSCALL DEFINED");
 }
 
@@ -107,7 +110,10 @@ unsafe extern "C" fn _syscall() -> ! {
 #[no_mangle]
 extern "C" fn handler(name: u64, arg1: u64, arg2: u64) -> u64 {
     // This block executes after saving the user state and before returning back
-    with_kernel_memory(|| SYSCALLS.lock()[name as u16 as usize](arg1, arg2))
+    with_kernel_memory(|| {
+        let thread = get_scheduler().running_thread.clone().unwrap();
+        SYSCALLS.lock()[name as u16 as usize](arg1, arg2, thread)
+    })
 }
 
 // TODO Try to combine both of these functions to make it faster.
