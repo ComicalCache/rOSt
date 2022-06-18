@@ -2,7 +2,7 @@
 
 For more information about the project, please visit the [wiki](https://github.com/0xffset/rOSt/wiki), this readme is meant to give a quick overview of the project for developers and anyone interested.
 
-If you are interested in contributing to the project, please visit the [Contributing file](https://github.com/0xffset/rOSt/blob/main/CONTRIBUTING.md).
+If you are interested in contributing to the project, please visit the [Contributing file](https://github.com/0xffset/rOSt/blob/main/.github/CONTRIBUTING.md).
 
 ### Structure
 
