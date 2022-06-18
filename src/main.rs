@@ -87,9 +87,13 @@ pub(crate) fn syscall(name: SysCallName, arg1: u64, arg2: u64) -> u64 {
     }
 }
 
-pub extern "C" fn exit(status: u64) -> ! {
+fn exit(status: u64) -> ! {
     crate::syscall(SysCallName::ThreadExit, status, 0);
     panic!("Thread exited");
+}
+
+fn sleep(time: u64) {
+    crate::syscall(SysCallName::ThreadSleep, time, 0);
 }
 
 pub fn kernel_main(kernel_info: KernelInformation) {

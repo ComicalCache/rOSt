@@ -42,7 +42,7 @@ impl Process {
 
     /// Creates a new process from a function pointer.
     ///
-    // TODO: loading the process from e.g. an ELF file
+    // TODO: Loading the process from e.g. an ELF file
     // We have to look up the structure of an ELF file and prepare the user memory mapping according to it.
     // Then we can load the program and it's data to proper places and create a process out of it.
     pub fn new(function: ProcessFunction, id: u64) -> Self {
