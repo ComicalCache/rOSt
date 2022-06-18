@@ -1,5 +1,7 @@
 use core::arch::asm;
+use core::cell::Ref;
 use core::cell::RefCell;
+use core::cell::RefMut;
 
 use alloc::rc::Rc;
 use x86_64::structures::paging::page::AddressNotAligned;
@@ -7,12 +9,14 @@ use x86_64::PhysAddr;
 
 use crate::debug;
 use crate::interrupts::GDT;
-use crate::processes::Thread;
 use internal_utils::get_current_tick;
 use internal_utils::mov_all;
 
 use super::get_scheduler;
 use super::memory_mapper::clear_user_mode_mapping;
+use super::process::Process;
+use super::thread::Thread;
+use super::thread::ThreadState;
 use super::RegistersState;
 
 /// Runs the thread immediately.
@@ -75,18 +79,69 @@ pub fn exit_thread(thread: Rc<RefCell<Thread>>) -> Result<(), AddressNotAligned>
     debug::log("Exiting thread");
     let borrowed_thread = thread.borrow();
     let mut borrowed_process = borrowed_thread.process.borrow_mut();
-    let threads = { &mut borrowed_process.threads };
-    threads.retain(|t| !Rc::ptr_eq(t, &thread));
+
+    remove_thread_from_process_queues(&borrowed_thread, thread.clone(), &mut borrowed_process);
+
     debug::log("Removed thread from process");
-    {
-        let scheduler = get_scheduler();
-        if let Some(current_thread) = scheduler.running_thread.clone() {
-            if Rc::ptr_eq(&thread, &current_thread) {
-                scheduler.running_thread = None;
+
+    check_should_remove_process(borrowed_process, &borrowed_thread)?;
+    Ok(())
+}
+
+/// Removes the thread from the respective process queue, depending on the thread state.
+pub(crate) fn remove_thread_from_process_queues(
+    borrowed_thread: &Ref<Thread>,
+    thread: Rc<RefCell<Thread>>,
+    borrowed_process: &mut RefMut<Process>,
+) {
+    match borrowed_thread.state {
+        ThreadState::Running => {
+            let scheduler = get_scheduler();
+            if let Some(current_thread) = scheduler.running_thread.clone() {
+                if Rc::ptr_eq(&thread, &current_thread) {
+                    scheduler.running_thread = None;
+                }
             }
         }
+        ThreadState::NotStarted => {
+            let nst_pos = borrowed_process
+                .not_started_threads
+                .iter()
+                .position(|t| Rc::ptr_eq(t, &thread))
+                .unwrap();
+            borrowed_process.not_started_threads.swap_remove(nst_pos);
+        }
+        ThreadState::Ready => {
+            let nst_pos = borrowed_process
+                .ready_threads
+                .iter()
+                .position(|t| Rc::ptr_eq(t, &thread))
+                .unwrap();
+            borrowed_process.ready_threads.swap_remove(nst_pos);
+        }
+        ThreadState::Sleeping(_) => {
+            let nst_pos = borrowed_process
+                .sleeping_threads
+                .iter()
+                .position(|t| Rc::ptr_eq(t, &thread))
+                .unwrap();
+            borrowed_process.sleeping_threads.swap_remove(nst_pos);
+        }
+        _ => {}
     }
-    if threads.is_empty() {
+}
+
+/// Checks if the process has no threads and can be safely removed.
+fn check_should_remove_process(
+    borrowed_process: RefMut<Process>,
+    borrowed_thread: &Ref<Thread>,
+) -> Result<(), AddressNotAligned> {
+    let thread_vectors = [
+        &borrowed_process.not_started_threads,
+        &borrowed_process.ready_threads,
+        &borrowed_process.sleeping_threads,
+    ];
+    if thread_vectors.into_iter().all(|v| v.is_empty()) {
         //Clean up the process
         get_scheduler().remove_process(borrowed_thread.process.clone());
         debug::log("Removed process from scheduler");
