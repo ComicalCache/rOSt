@@ -2,6 +2,8 @@
 
 For more information about the project, please visit the [wiki](https://github.com/0xffset/rOSt/wiki), this readme is meant to give a quick overview of the project for developers and anyone interested.
 
+If you are interested in contributing to the project, please visit the [Contributing file](https://github.com/0xffset/rOSt/blob/main/CONTRIBUTING.md).
+
 ### Structure
 
 The project is divided into multiple folders:
@@ -31,7 +33,7 @@ will build the kernel and start up a qemu instance booting the kernel in debug m
 
 ## Testing
 
-We do have tests set up - they are ran after the kernel initializes the necessities like kernel heap, general memory management and interrupts.
+Tests are ran after the kernel initializes the necessities like kernel heap, general memory management and interrupts.
 
 To run the tests do:
 
