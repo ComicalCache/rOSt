@@ -12,9 +12,13 @@ The project can be contributed to in this way:
 
    To create a fork, click on the button commonly located in the upper-right corner of the page:
 
-   ![Fork button in the upper-right corner](./fork.PNG)
+---
 
-   Or just [click here](https://github.com/0xffset/rOSt/fork)
+![Fork button in the upper-right corner](./fork.PNG)
+
+---
+
+Or just [click here](https://github.com/0xffset/rOSt/fork)
 
 2. ### Find an issue to work on
 
