@@ -11,15 +11,14 @@ The project can be contributed to in this way:
 1. ### Create a fork of this project
 
    To create a fork, click on the button commonly located in the upper-right corner of the page:
-   <style>
-      img {
-         border: 1px solid grey
-      }
-   </style>
 
-   ![Fork button in the upper-right corner](./fork.PNG)
+---
 
-   Or just [click here](https://github.com/0xffset/rOSt/fork)
+![Fork button in the upper-right corner](./fork.PNG)
+
+---
+
+Or just [click here](https://github.com/0xffset/rOSt/fork)
 
 2. ### Find an issue to work on
 
